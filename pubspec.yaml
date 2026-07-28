@@ -1,0 +1,42 @@
+name: pandamalatang_terminal
+description: "Panda Malatang terminal — receives orders and makes sure nobody misses one."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # HTTP client. `http` rather than dio: this app makes four kinds of request and
+  # needs none of dio's interceptor machinery.
+  http: ^1.2.2
+
+  # The bearer token is a long-lived credential for the shop's order feed, so it
+  # goes in the Keychain / EncryptedSharedPreferences, not SharedPreferences.
+  flutter_secure_storage: ^9.2.4
+
+  # The alarm. Chosen for looping playback and for being able to ignore the iOS
+  # silent switch, which a notification sound cannot.
+  audioplayers: ^6.1.0
+
+  # A sleeping tablet that never lights up is a missed order.
+  wakelock_plus: ^1.2.8
+
+  # Reported at pairing so a lost tablet can be identified in the console.
+  device_info_plus: ^11.2.0
+
+  # Non-critical settings (backend URL, last-seen cursor) — no secrets here.
+  shared_preferences: ^2.3.5
+
+  intl: ^0.20.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

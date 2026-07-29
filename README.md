@@ -288,9 +288,10 @@ Stated plainly, because some of these matter more than they look:
 - **The alarm has never actually sounded** end-to-end from a real order. The API
   path is verified against production; the noise is not.
 - **`Podfile.lock` is incomplete** — see the warning above; run `pod install`.
-- **`macos/` and `web/` exist** from a `flutter create` run and are untracked.
-  Handy for checking layout without a tablet, but neither reproduces the alarm's
-  real behaviour (silent switch, alarm stream, wakelock).
+- **iOS and Android only.** A `flutter create` run once added `macos/` and `web/`;
+  both are gone. This app is a tablet on a counter, and a desktop or browser
+  build reproduces none of what makes it work — no silent switch, no alarm
+  stream, no wakelock. The website is a separate project (`pangdamalatang`).
 - **Polling, not push.** If wifi drops the app is blind, so it shows connection
   state permanently and warns after two consecutive failed polls. A terminal
   that has silently stopped receiving looks exactly like a quiet shop, and that

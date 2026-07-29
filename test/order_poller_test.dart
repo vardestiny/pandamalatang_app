@@ -26,7 +26,7 @@ TerminalApi apiReturning(List<Map<String, dynamic>> Function() orders,
     {List<String> log = const []}) {
   final client = MockClient((req) async {
     if (req.url.path.endsWith('/ack')) {
-      (log as List<String>).add(req.url.path);
+      log.add(req.url.path);
       return http.Response('{"changed":true}', 200);
     }
     return http.Response(

@@ -25,12 +25,28 @@ ThemeData pandaTheme() {
       surface: PandaColors.paper,
       onSurface: PandaColors.ink,
     ),
-    // Larger than a phone default throughout: this is read at arm's length on a
-    // counter, often at a glance, sometimes by someone holding a cup.
     textTheme: base.textTheme.apply(
       bodyColor: PandaColors.ink,
       displayColor: PandaColors.ink,
-      fontSizeFactor: 1.1,
+    ),
+    // Larger than a phone default throughout: this is read at arm's length on a
+    // counter, often at a glance, sometimes by someone holding a cup.
+    //
+    // The scaling has to happen here rather than on `textTheme`, and the reason
+    // is a trap worth writing down: `ThemeData.textTheme` carries colour and
+    // weight but every `fontSize` in it is **null** at this point. Sizes live in
+    // the script-specific geometry below, and Flutter only merges them in later,
+    // once the locale is known. So `textTheme.apply(fontSizeFactor: …)` asserts
+    // outright — "fontSize != null || (fontSizeFactor == 1.0 …)" — because it is
+    // being asked to scale numbers that do not exist yet.
+    //
+    // All three geometries get the factor, not just englishLike, so a Chinese or
+    // tall-script locale is scaled too instead of silently rendering at stock
+    // size.
+    typography: base.typography.copyWith(
+      englishLike: base.typography.englishLike.apply(fontSizeFactor: 1.1),
+      dense: base.typography.dense.apply(fontSizeFactor: 1.1),
+      tall: base.typography.tall.apply(fontSizeFactor: 1.1),
     ),
     appBarTheme: const AppBarTheme(
       backgroundColor: PandaColors.paper,

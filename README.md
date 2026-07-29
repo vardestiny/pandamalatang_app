@@ -73,9 +73,21 @@ fvm flutter devices           # copy the simulator's id
 fvm flutter run -d <device-id>
 ```
 
-The first iOS build runs `pod install` and **generates `ios/Podfile` and
-`ios/Podfile.lock`**, which don't exist yet. That's expected — commit them when
-they appear, so every later build resolves the same pod versions.
+`ios/Podfile` and `ios/Podfile.lock` are committed, so pods resolve to fixed
+versions.
+
+> **Run `pod install` before trusting a build.** The committed `Podfile.lock`
+> lists only **one** pod (`flutter_secure_storage`), but this app has **seven**
+> iOS plugins — `audioplayers_darwin`, `device_info_plus`, `package_info_plus`,
+> `path_provider_foundation`, `shared_preferences_foundation` and `wakelock_plus`
+> are all missing from it. `flutter build ios` regenerates the lock itself, so
+> this heals on the next real build; the reason to care is that
+> `audioplayers_darwin` **is the alarm**, and a build against an incomplete pod
+> integration is one that runs perfectly and never makes a sound.
+>
+> ```sh
+> cd ios && pod install && cd ..     # lock should then list 7 pods
+> ```
 
 What the simulator can and cannot tell you:
 
@@ -137,7 +149,7 @@ build number it has already seen.
 
 Verified in the project, so you don't need to touch them:
 
-- **Bundle ID** `com.pandamalatang.pandamalatangTerminal`
+- **Bundle ID** `com.pandamalatang.terminal`
 - **Deployment target iOS 13.0** — matches the highest plugin requirement
   (`audioplayers_darwin` and `shared_preferences_foundation` both need 13.0), so
   pods will resolve
@@ -271,11 +283,14 @@ screen at `src/app/admin/(protected)/terminals/`.
 
 Stated plainly, because some of these matter more than they look:
 
-- **Never run on a device.** No Xcode and no Android SDK here. `analyze` and the
-  tests pass; nothing has rendered on hardware.
+- **Never run on a device from this machine.** Still no Xcode and no Android SDK
+  here, so `analyze` and the tests are the whole of what gets verified locally.
 - **The alarm has never actually sounded** end-to-end from a real order. The API
   path is verified against production; the noise is not.
-- **No `ios/Podfile` yet** — generated on the first iOS build.
+- **`Podfile.lock` is incomplete** — see the warning above; run `pod install`.
+- **`macos/` and `web/` exist** from a `flutter create` run and are untracked.
+  Handy for checking layout without a tablet, but neither reproduces the alarm's
+  real behaviour (silent switch, alarm stream, wakelock).
 - **Polling, not push.** If wifi drops the app is blind, so it shows connection
   state permanently and warns after two consecutive failed polls. A terminal
   that has silently stopped receiving looks exactly like a quiet shop, and that

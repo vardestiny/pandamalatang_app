@@ -64,6 +64,8 @@ class OrderDrink {
     required this.quantity,
     required this.options,
     required this.lineTotal,
+    this.sugarLevel,
+    this.temperature,
   });
 
   final String name;
@@ -74,6 +76,25 @@ class OrderDrink {
   final List<String> options;
   final double lineTotal;
 
+  /// 糖度 / 冷热, as the server's enum names — the labels below are the app's, so
+  /// the tablet reads in its own language rather than whatever the website sent.
+  /// Null for a side dish, and for any line taken before the choice existed.
+  final String? sugarLevel;
+  final String? temperature;
+
+  static const _sugar = {'HALF': '五分糖', 'FULL': '全糖'};
+  static const _temp = {'HOT': '热', 'ROOM': '常温', 'ICED': '加冰'};
+
+  /// How to make it, ready to print — temperature first, since that decides
+  /// which jug it comes out of.
+  String? get preparation {
+    final parts = [
+      _temp[temperature ?? ''],
+      _sugar[sugarLevel ?? ''],
+    ].whereType<String>().toList();
+    return parts.isEmpty ? null : parts.join(' · ');
+  }
+
   factory OrderDrink.fromJson(Map<String, dynamic> j) => OrderDrink(
         name: j['name'] as String? ?? '?',
         quantity: j['quantity'] as int? ?? 1,
@@ -81,6 +102,8 @@ class OrderDrink {
             .map((e) => e.toString())
             .toList(),
         lineTotal: (j['lineTotal'] as num?)?.toDouble() ?? 0,
+        sugarLevel: j['sugarLevel'] as String?,
+        temperature: j['temperature'] as String?,
       );
 }
 

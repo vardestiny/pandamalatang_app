@@ -143,6 +143,17 @@ class _DrinkLine extends StatelessWidget {
                   drink.name,
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                 ),
+                // Above the paid add-ons: this is the drink itself, and getting
+                // it wrong means pouring the cup again.
+                if (drink.preparation != null)
+                  Text(
+                    drink.preparation!,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: PandaColors.ink,
+                    ),
+                  ),
                 if (drink.options.isNotEmpty)
                   Text(
                     '+ ${drink.options.join(" · ")}',

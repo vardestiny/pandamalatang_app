@@ -1,0 +1,12 @@
+# German is the template, not English: the shop is in Bremen, the app was written
+# in German, and translating away from the original avoids a round trip through a
+# second language that nobody involved actually speaks to each other in.
+arb-dir: lib/l10n
+template-arb-file: app_de.arb
+output-localization-file: app_localizations.dart
+output-class: L
+nullable-getter: false
+
+# A missing translation is a bug the build should mention, not one a staff member
+# finds mid-service in the wrong language.
+untranslated-messages-file: l10n-missing.txt

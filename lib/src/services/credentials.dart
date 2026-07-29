@@ -16,8 +16,15 @@ class Credentials {
   static const _nameKey = 'terminal_name';
   static const _baseUrlKey = 'base_url';
   static const _pairedAtKey = 'paired_at';
+  static const _localeKey = 'locale';
 
-  static const defaultBaseUrl = 'https://pandamalatang.com';
+  /// Overridable with --dart-define=BASE_URL so a dev build can point at a
+  /// local pangdamalatang without retyping the URL on every fresh profile.
+  /// Only the default: whatever the pairing screen saved always wins.
+  static const defaultBaseUrl = String.fromEnvironment(
+    'BASE_URL',
+    defaultValue: 'https://pandamalatang.com',
+  );
 
   Future<String?> token() => _secure.read(key: _tokenKey);
 
@@ -51,6 +58,26 @@ class Credentials {
   Future<void> setBaseUrl(String url) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_baseUrlKey, url);
+  }
+
+  /// The language someone chose on this tablet, or null for "follow the device".
+  ///
+  /// A setting rather than the device locale alone: the tablet is shop equipment
+  /// that arrives configured in whatever language it shipped in, and the person
+  /// reading it is not necessarily the person who set it up.
+  Future<String?> localeCode() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_localeKey);
+  }
+
+  /// Null clears the choice and hands the decision back to the device.
+  Future<void> setLocaleCode(String? code) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (code == null) {
+      await prefs.remove(_localeKey);
+    } else {
+      await prefs.setString(_localeKey, code);
+    }
   }
 
   Future<String?> terminalName() async {

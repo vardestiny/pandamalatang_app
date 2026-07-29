@@ -10,6 +10,12 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # German, English and Chinese. Also gives Material's own widgets — the date
+  # picker, the text-selection menu — translations the app would otherwise have
+  # to leave in English.
+  flutter_localizations:
+    sdk: flutter
+
   # HTTP client. `http` rather than dio: this app makes four kinds of request and
   # needs none of dio's interceptor machinery.
   http: ^1.2.2
@@ -40,6 +46,10 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  # Builds AppLocalizations from lib/l10n/*.arb on every pub get / run.
+  # Configured in l10n.yaml.
+  generate: true
 
   assets:
     - assets/sounds/

@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
+import '../l10n_ext.dart';
 import '../models/order.dart';
 import '../theme.dart';
 
@@ -59,6 +61,7 @@ class _AlertOverlayState extends State<AlertOverlay>
   @override
   Widget build(BuildContext context) {
     final count = widget.orders.length;
+    final l = L.of(context);
 
     // Back button does nothing. Deliberate: on Android this is the reflex that
     // would otherwise dismiss the alarm without anyone reading the order.
@@ -88,7 +91,7 @@ class _AlertOverlayState extends State<AlertOverlay>
                             color: Colors.white, size: 34),
                         const SizedBox(width: 10),
                         Text(
-                          count == 1 ? 'NEUE BESTELLUNG' : '$count NEUE BESTELLUNGEN',
+                          l.alertHeadline(count),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 26,
@@ -126,11 +129,7 @@ class _AlertOverlayState extends State<AlertOverlay>
                                 setState(() => _busy = true);
                                 await widget.onAcknowledgeAll();
                               },
-                        child: Text(_busy
-                            ? 'Wird übernommen …'
-                            : count == 1
-                                ? 'ANNEHMEN'
-                                : 'ALLE ANNEHMEN'),
+                        child: Text(_busy ? l.alertBusy : l.alertAccept(count)),
                       ),
                     ),
                   ],
@@ -152,11 +151,7 @@ class _AlertCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pickup = order.pickupTime;
-    final time = pickup == null
-        ? 'sofort'
-        : '${pickup.hour.toString().padLeft(2, '0')}:'
-            '${pickup.minute.toString().padLeft(2, '0')}';
+    final l = L.of(context);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -170,7 +165,7 @@ class _AlertCard extends StatelessWidget {
           Row(
             children: [
               Text(
-                '#${order.id.toString().padLeft(4, '0')}',
+                l.orderNumber(order.id),
                 style: const TextStyle(
                   fontSize: 30,
                   fontWeight: FontWeight.w900,
@@ -179,7 +174,7 @@ class _AlertCard extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                time,
+                l.pickupAt(order.pickupTime),
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -202,7 +197,7 @@ class _AlertCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(bottom: 4),
               child: Text(
-                '🍲 ${b.amount.toStringAsFixed(2)} € · ${b.soupBase}',
+                '🍲 ${l.money(b.amount)} · ${b.soupBase}',
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
             ),
@@ -218,7 +213,7 @@ class _AlertCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  '⚠ OHNE: ${b.exclude.join(", ")}',
+                  '⚠ ${l.without(b.exclude.join(', '))}',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,

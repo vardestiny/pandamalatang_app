@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../l10n/app_localizations.dart';
 import '../api/terminal_api.dart';
 import '../services/credentials.dart';
 import '../theme.dart';
@@ -20,8 +21,12 @@ class _PairingScreenState extends State<PairingScreen> {
   final _baseUrl = TextEditingController();
   final _credentials = Credentials();
   bool _busy = false;
-  String? _error;
   bool _showAdvanced = false;
+
+  /// What went wrong, as a reason. Turned into a sentence at build time so it is
+  /// still in the right language if someone changes the language while looking
+  /// at it.
+  _PairError? _error;
 
   @override
   void initState() {
@@ -41,7 +46,7 @@ class _PairingScreenState extends State<PairingScreen> {
   Future<void> _submit() async {
     final code = _code.text.trim();
     if (code.length < 4) {
-      setState(() => _error = 'Bitte den 6-stelligen Code eingeben.');
+      setState(() => _error = _PairError.shortCode);
       return;
     }
     setState(() {
@@ -60,11 +65,14 @@ class _PairingScreenState extends State<PairingScreen> {
       );
       if (mounted) widget.onPaired();
     } on PairingFailed catch (e) {
-      if (mounted) setState(() => _error = e.message);
-    } catch (_) {
       if (mounted) {
-        setState(() => _error = 'Server nicht erreichbar. Verbindung prüfen.');
+        setState(() => _error = switch (e.reason) {
+              PairingFailure.rateLimited => _PairError.rateLimited,
+              PairingFailure.invalidCode => _PairError.invalidCode,
+            });
       }
+    } catch (_) {
+      if (mounted) setState(() => _error = _PairError.unreachable);
     } finally {
       api.dispose();
       if (mounted) setState(() => _busy = false);
@@ -73,6 +81,7 @@ class _PairingScreenState extends State<PairingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = L.of(context);
     return Scaffold(
       body: Center(
         child: SingleChildScrollView(
@@ -85,16 +94,15 @@ class _PairingScreenState extends State<PairingScreen> {
                 const Text('🐼', style: TextStyle(fontSize: 48)),
                 const SizedBox(height: 8),
                 Text(
-                  'Terminal koppeln',
+                  l.pairTitle,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                 ),
                 const SizedBox(height: 6),
-                const Text(
-                  'Im Admin unter Terminals ein Gerät anlegen und den Code hier '
-                  'eingeben.',
-                  style: TextStyle(color: PandaColors.inkSoft),
+                Text(
+                  l.pairIntro,
+                  style: const TextStyle(color: PandaColors.inkSoft),
                 ),
                 const SizedBox(height: 24),
                 TextField(
@@ -116,36 +124,39 @@ class _PairingScreenState extends State<PairingScreen> {
                       (_, next) => next.copyWith(text: next.text.toUpperCase()),
                     ),
                   ],
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     counterText: '',
-                    hintText: 'ABC123',
-                    border: OutlineInputBorder(),
+                    hintText: l.pairCodeHint,
+                    border: const OutlineInputBorder(),
                   ),
                   onSubmitted: (_) => _submit(),
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 12),
-                  Text(_error!, style: const TextStyle(color: PandaColors.chilli)),
+                  Text(
+                    _error!.text(l),
+                    style: const TextStyle(color: PandaColors.chilli),
+                  ),
                 ],
                 const SizedBox(height: 20),
                 FilledButton(
                   onPressed: _busy ? null : _submit,
-                  child: Text(_busy ? 'Koppeln …' : 'Koppeln'),
+                  child: Text(_busy ? l.pairSubmitBusy : l.pairSubmit),
                 ),
                 const SizedBox(height: 12),
                 // Hidden by default: the URL is right in every normal case, and a
                 // visible server field invites someone to "fix" a working one.
                 TextButton(
                   onPressed: () => setState(() => _showAdvanced = !_showAdvanced),
-                  child: Text(_showAdvanced ? 'Erweitert ausblenden' : 'Erweitert'),
+                  child: Text(_showAdvanced ? l.pairAdvancedHide : l.pairAdvanced),
                 ),
                 if (_showAdvanced)
                   TextField(
                     controller: _baseUrl,
                     keyboardType: TextInputType.url,
-                    decoration: const InputDecoration(
-                      labelText: 'Server',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l.fieldServer,
+                      border: const OutlineInputBorder(),
                     ),
                   ),
               ],
@@ -155,4 +166,20 @@ class _PairingScreenState extends State<PairingScreen> {
       ),
     );
   }
+}
+
+/// Why pairing did not work. Held as a reason rather than a sentence so the
+/// screen can render it in whatever language is current when it is shown.
+enum _PairError {
+  shortCode,
+  unreachable,
+  rateLimited,
+  invalidCode;
+
+  String text(L l) => switch (this) {
+        _PairError.shortCode => l.pairErrorShortCode,
+        _PairError.unreachable => l.pairErrorUnreachable,
+        _PairError.rateLimited => l.pairErrorRateLimited,
+        _PairError.invalidCode => l.pairErrorInvalidCode,
+      };
 }

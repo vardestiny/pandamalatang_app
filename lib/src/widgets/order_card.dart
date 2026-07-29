@@ -1,44 +1,78 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
+import '../l10n_ext.dart';
 import '../models/order.dart';
 import '../theme.dart';
 
 /// One order on the board, laid out as a prep instruction rather than a receipt —
 /// the same ordering as the web console's make ticket, so staff moving between
 /// the two are not relearning where to look.
-class OrderCardView extends StatelessWidget {
-  const OrderCardView({super.key, required this.order});
+class OrderCardView extends StatefulWidget {
+  const OrderCardView({super.key, required this.order, this.onAdvance});
   final TerminalOrder order;
 
-  static const _statusLabel = {
-    'PENDING': 'NEU',
-    'CONFIRMED': 'ANGENOMMEN',
-    'PREPARING': 'IN ARBEIT',
-    'READY': 'FERTIG',
-  };
+  /// Takes the order one step along the path. Null makes the card read-only,
+  /// which is what the alert overlay wants — the only button there is Annehmen.
+  final Future<void> Function(String next)? onAdvance;
 
   static const _statusColor = {
     'PENDING': PandaColors.amber,
     'CONFIRMED': Color(0xFF2563EB),
     'PREPARING': Color(0xFFEA580C),
     'READY': PandaColors.sichuan,
+    'COMPLETED': PandaColors.inkSoft,
   };
 
-  static const _spice = {
-    'NONE': 'OHNE',
-    'LIGHT': 'MILD',
-    'MEDIUM': 'MITTEL',
-    'HOT': 'SEHR SCHARF',
+  /// The button's words come from the ARB files, and are the web console's own
+  /// (`nextCONFIRMED` … `nextCOMPLETED`): one member of staff uses both screens,
+  /// sometimes within a minute.
+  static const _nextIcon = {
+    'CONFIRMED': Icons.check,
+    'PREPARING': Icons.soup_kitchen,
+    'READY': Icons.done_all,
+    'COMPLETED': Icons.shopping_bag,
   };
 
-  String get _pickup {
-    final p = order.pickupTime;
-    if (p == null) return 'sofort';
-    return '${p.hour.toString().padLeft(2, '0')}:'
-        '${p.minute.toString().padLeft(2, '0')}';
+  @override
+  State<OrderCardView> createState() => _OrderCardViewState();
+}
+
+class _OrderCardViewState extends State<OrderCardView> {
+  /// True from the tap until shortly after the server answers.
+  ///
+  /// The lock outlasts the request on purpose. The button relabels itself the
+  /// moment a step lands — that is the feedback — so an impatient second tap
+  /// would land on the *next* step, in the same place, a few hundred
+  /// milliseconds later. Two taps on "Fertig" would hand over an order that is
+  /// still on the counter.
+  bool _busy = false;
+  Timer? _settle;
+
+  @override
+  void dispose() {
+    _settle?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _step(String next) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      await widget.onAdvance!(next);
+    } finally {
+      _settle?.cancel();
+      _settle = Timer(const Duration(milliseconds: 700), () {
+        if (mounted) setState(() => _busy = false);
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final order = widget.order;
+    final l = L.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -53,29 +87,31 @@ class OrderCardView extends StatelessWidget {
           Row(
             children: [
               Text(
-                '#${order.id.toString().padLeft(4, '0')}',
+                l.orderNumber(order.id),
                 style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
               ),
               const SizedBox(width: 10),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: (_statusColor[order.status] ?? PandaColors.inkSoft)
+                  color: (OrderCardView._statusColor[order.status] ??
+                          PandaColors.inkSoft)
                       .withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  _statusLabel[order.status] ?? order.status,
+                  l.statusBadge(order.status),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
-                    color: _statusColor[order.status] ?? PandaColors.inkSoft,
+                    color: OrderCardView._statusColor[order.status] ??
+                        PandaColors.inkSoft,
                   ),
                 ),
               ),
               const Spacer(),
               Text(
-                _pickup,
+                l.pickupAt(order.pickupTime),
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ],
@@ -102,14 +138,80 @@ class OrderCardView extends StatelessWidget {
           if (order.notes != null && order.notes!.trim().isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(
-              '„${order.notes!.trim()}“',
+              l.quoted(order.notes!.trim()),
               style: const TextStyle(
                 fontStyle: FontStyle.italic,
                 color: PandaColors.inkSoft,
               ),
             ),
           ],
+
+          if (widget.onAdvance != null && order.nextStatus != null)
+            _StepButton(
+              next: order.nextStatus!,
+              busy: _busy,
+              onPressed: () => _step(order.nextStatus!),
+            ),
         ],
+      ),
+    );
+  }
+}
+
+/// The one button on the card, and the whole reason an order moves.
+///
+/// Full width and 56 high because it is pressed with a thumb, at speed, by
+/// someone holding a cup in the other hand — and because a miss that lands on
+/// the card instead does nothing, which is the correct outcome of a mistake.
+class _StepButton extends StatelessWidget {
+  const _StepButton({
+    required this.next,
+    required this.busy,
+    required this.onPressed,
+  });
+
+  final String next;
+  final bool busy;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    // Handover is the step that takes the order off the board, so it is the one
+    // that looks different. Every other step is reversible by simply carrying on.
+    final isHandover = next == 'COMPLETED';
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: SizedBox(
+        width: double.infinity,
+        height: 56,
+        child: FilledButton.icon(
+          onPressed: busy ? null : onPressed,
+          style: FilledButton.styleFrom(
+            backgroundColor: isHandover ? PandaColors.sichuan : PandaColors.ink,
+            foregroundColor: Colors.white,
+            disabledBackgroundColor: PandaColors.inkSoft.withValues(alpha: 0.35),
+            disabledForegroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          icon: busy
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: Colors.white,
+                  ),
+                )
+              : Icon(OrderCardView._nextIcon[next] ?? Icons.arrow_forward,
+                  size: 24),
+          label: Text(
+            L.of(context).stepLabel(next),
+            style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900),
+          ),
+        ),
       ),
     );
   }
@@ -121,6 +223,7 @@ class _DrinkLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final prep = L.of(context).preparation(drink);
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
@@ -145,9 +248,9 @@ class _DrinkLine extends StatelessWidget {
                 ),
                 // Above the paid add-ons: this is the drink itself, and getting
                 // it wrong means pouring the cup again.
-                if (drink.preparation != null)
+                if (prep != null)
                   Text(
-                    drink.preparation!,
+                    prep,
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
@@ -178,6 +281,7 @@ class _BowlBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = L.of(context);
     return Container(
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(10),
@@ -189,7 +293,7 @@ class _BowlBlock extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${bowl.amount.toStringAsFixed(2)} € → ca. ${bowl.targetWeightG} g',
+            l.bowlTarget(l.money(bowl.amount), bowl.targetWeightG),
             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 6),
@@ -197,7 +301,7 @@ class _BowlBlock extends StatelessWidget {
           // bowl is made.
           Row(
             children: [
-              const _Label('BRÜHE'),
+              _Label(l.labelBroth),
               Expanded(
                 child: Text(
                   bowl.soupBase,
@@ -212,7 +316,7 @@ class _BowlBlock extends StatelessWidget {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    OrderCardView._spice[bowl.spiceLevel] ?? bowl.spiceLevel!,
+                    l.spice(bowl.spiceLevel!),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
@@ -223,10 +327,10 @@ class _BowlBlock extends StatelessWidget {
             ],
           ),
           if (bowl.boil.isNotEmpty)
-            Row(children: [const _Label('KOCHEN'), Expanded(child: Text(bowl.boil.join(' · ')))]),
+            Row(children: [_Label(l.labelBoil), Expanded(child: Text(bowl.boil.join(' · ')))]),
           if (bowl.toppings.isNotEmpty)
             Row(children: [
-              const _Label('TOPPING'),
+              _Label(l.labelTopping),
               Expanded(child: Text(bowl.toppings.join(' · '))),
             ]),
           // Red, bold, never abbreviated. This is where allergies live.
@@ -245,7 +349,7 @@ class _BowlBlock extends StatelessWidget {
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      'OHNE: ${bowl.exclude.join(", ")}',
+                      l.without(bowl.exclude.join(', ')),
                       style: const TextStyle(
                         fontWeight: FontWeight.w900,
                         color: PandaColors.chilliDeep,
@@ -258,7 +362,7 @@ class _BowlBlock extends StatelessWidget {
           if (bowl.note != null && bowl.note!.trim().isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 6),
-              child: Text('„${bowl.note!.trim()}“',
+              child: Text(l.quoted(bowl.note!.trim()),
                   style: const TextStyle(fontStyle: FontStyle.italic)),
             ),
         ],

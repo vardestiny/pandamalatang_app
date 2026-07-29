@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pandamalatang_terminal/l10n/app_localizations.dart';
 import 'package:pandamalatang_terminal/src/models/order.dart';
 import 'package:pandamalatang_terminal/src/theme.dart';
 import 'package:pandamalatang_terminal/src/widgets/order_card.dart';
@@ -92,6 +93,8 @@ void main() {
 
     await tester.pumpWidget(MaterialApp(
       theme: pandaTheme(),
+      localizationsDelegates: L.localizationsDelegates,
+      supportedLocales: L.supportedLocales,
       home: Scaffold(
         body: SingleChildScrollView(child: OrderCardView(order: order)),
       ),

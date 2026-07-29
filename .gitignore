@@ -46,3 +46,11 @@ app.*.map.json
 
 # fvm keeps a symlink to the pinned SDK; the pin itself (.fvmrc) is committed.
 .fvm/
+
+# The web target is scaffolded locally for browser smoke-testing only
+# (see README) and is not a shipped platform.
+/web/
+
+# Generated from lib/l10n/*.arb on every pub get; see l10n.yaml.
+lib/l10n/app_localizations*.dart
+l10n-missing.txt

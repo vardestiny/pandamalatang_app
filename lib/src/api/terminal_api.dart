@@ -10,11 +10,22 @@ class TerminalUnauthorized implements Exception {
   const TerminalUnauthorized();
 }
 
+/// Why a pairing attempt did not work, as a reason rather than a sentence.
+///
+/// The app speaks three languages and this layer speaks none of them: a German
+/// string thrown from here could not be translated by the screen that catches it.
+enum PairingFailure {
+  /// Unknown code, expired code, revoked terminal. Deliberately one case for all
+  /// three — telling a guesser which of them they hit is free help.
+  invalidCode,
+  rateLimited,
+}
+
 class PairingFailed implements Exception {
-  const PairingFailed(this.message);
-  final String message;
+  const PairingFailed(this.reason);
+  final PairingFailure reason;
   @override
-  String toString() => message;
+  String toString() => 'PairingFailed(${reason.name})';
 }
 
 class TerminalApi {
@@ -52,10 +63,10 @@ class TerminalApi {
 
     final body = _decode(res.body);
     if (res.statusCode == 429) {
-      throw const PairingFailed('Zu viele Versuche. Bitte später erneut.');
+      throw const PairingFailed(PairingFailure.rateLimited);
     }
     if (res.statusCode != 200 || body['token'] is! String) {
-      throw const PairingFailed('Code ungültig oder abgelaufen.');
+      throw const PairingFailed(PairingFailure.invalidCode);
     }
     return (
       token: body['token'] as String,
@@ -84,6 +95,30 @@ class TerminalApi {
     if (res.statusCode >= 400) {
       throw http.ClientException('ack ${res.statusCode}');
     }
+  }
+
+  /// Move an order along the service path — Kochen, Fertig, Abgeholt.
+  ///
+  /// Returns the status the server actually holds, which is not always the one
+  /// asked for: the path is forward-only, so a tap from a board that is a poll
+  /// behind comes back with wherever the order really got to. That is a fact to
+  /// display, not an error to report — the counter cares about the order, not
+  /// about which screen won the race.
+  Future<String> setStatus(int orderId, String status) async {
+    final res = await _client
+        .post(
+          _uri('/api/terminal/orders/$orderId/status'),
+          headers: _headers,
+          body: jsonEncode({'status': status}),
+        )
+        .timeout(_timeout);
+    if (res.statusCode == 401) throw const TerminalUnauthorized();
+
+    final body = _decode(res.body);
+    if (res.statusCode == 200 || res.statusCode == 409) {
+      return body['status'] as String? ?? status;
+    }
+    throw http.ClientException('status ${res.statusCode}');
   }
 
   Map<String, dynamic> _decode(String body) {

@@ -1,0 +1,110 @@
+{
+  "@@locale": "zh",
+
+  "appTitle": "Panda Malatang Terminal",
+
+  "pairTitle": "绑定终端",
+  "pairIntro": "在后台「终端」中添加设备，然后在这里输入配对码。",
+  "pairCodeHint": "ABC123",
+  "pairSubmit": "绑定",
+  "pairSubmitBusy": "绑定中 …",
+  "pairAdvanced": "高级设置",
+  "pairAdvancedHide": "收起高级设置",
+  "pairErrorShortCode": "请输入 6 位配对码。",
+  "pairErrorUnreachable": "无法连接服务器，请检查网络。",
+  "pairErrorRateLimited": "尝试次数过多，请稍后再试。",
+  "pairErrorInvalidCode": "配对码无效或已过期。",
+
+  "boardTitleFallback": "终端",
+  "profileTooltip": "设置",
+  "boardEmpty": "暂无待处理订单",
+  "offlineBanner": "网络已断开 — 当前收不到新订单",
+  "lockedTitle": "此终端已被停用",
+  "lockedBody": "请在后台生成新的配对码，并重新绑定此设备。",
+  "lockedAction": "重新绑定",
+
+  "connNever": "尚未连接",
+  "connJustNow": "刚刚更新",
+  "connSeconds": "{seconds} 秒前更新",
+  "@connSeconds": { "placeholders": { "seconds": { "type": "int" } } },
+  "connMinutes": "{minutes} 分钟前更新",
+  "@connMinutes": { "placeholders": { "minutes": { "type": "int" } } },
+
+  "stepFailed": "{order} 未保存 — 网络不通，请重试。",
+  "@stepFailed": { "placeholders": { "order": { "type": "String", "example": "#0042" } } },
+  "handedOver": "{order} 已取餐",
+  "@handedOver": { "placeholders": { "order": { "type": "String", "example": "#0042" } } },
+  "undo": "撤销",
+  "alreadyAt": "{order} 已经是{status}",
+  "@alreadyAt": { "placeholders": { "order": { "type": "String" }, "status": { "type": "String" } } },
+
+  "statusBadgePENDING": "新订单",
+  "statusBadgeCONFIRMED": "已接单",
+  "statusBadgePREPARING": "制作中",
+  "statusBadgeREADY": "已完成",
+  "statusBadgeCOMPLETED": "已取餐",
+
+  "statusNamePENDING": "新订单",
+  "statusNameCONFIRMED": "已接单",
+  "statusNamePREPARING": "制作中",
+  "statusNameREADY": "已完成",
+  "statusNameCOMPLETED": "已取餐",
+  "statusNameCANCELLED": "已取消",
+
+  "nextCONFIRMED": "接单",
+  "nextPREPARING": "开始煮",
+  "nextREADY": "做好了",
+  "nextCOMPLETED": "已取餐",
+
+  "pickupNow": "尽快",
+  "labelBroth": "汤底",
+  "labelBoil": "涮煮",
+  "labelTopping": "小料",
+  "without": "不要：{items}",
+  "@without": { "placeholders": { "items": { "type": "String", "example": "香菜、花生" } } },
+
+  "spiceNONE": "不辣",
+  "spiceLIGHT": "微辣",
+  "spiceMEDIUM": "中辣",
+  "spiceHOT": "特辣",
+
+  "sugarHALF": "五分糖",
+  "sugarFULL": "全糖",
+  "tempHOT": "热",
+  "tempROOM": "常温",
+  "tempICED": "加冰",
+
+  "bowlTarget": "{amount} → 约 {grams} 克",
+  "@bowlTarget": { "placeholders": { "amount": { "type": "String", "example": "€15.00" }, "grams": { "type": "int" } } },
+
+  "alertHeadline": "{count, plural, other{{count} 个新订单}}",
+  "@alertHeadline": { "placeholders": { "count": { "type": "int" } } },
+  "alertAccept": "{count, plural, =1{接单} other{全部接单}}",
+  "@alertAccept": { "placeholders": { "count": { "type": "int" } } },
+  "alertBusy": "正在接单 …",
+
+  "quoted": "「{text}」",
+  "@quoted": { "placeholders": { "text": { "type": "String" } } },
+
+  "profileTitle": "终端",
+  "fieldName": "名称",
+  "fieldServer": "服务器",
+  "fieldPaired": "绑定时间",
+  "fieldConnection": "连接状态",
+  "fieldOpenOrders": "待处理订单",
+  "fieldLanguage": "语言",
+
+  "languageSystem": "跟随系统",
+  "languageGerman": "Deutsch",
+  "languageEnglish": "English",
+  "languageChinese": "中文",
+
+  "testSound": "测试提示音",
+  "testSoundPlayed": "已播放提示音。没听见？请检查设备音量。",
+  "testSoundHint": "每次开始营业前测试一次。设备被静音是这个 App 唯一无法自己发现的故障。",
+
+  "unpair": "解除绑定",
+  "unpairTitle": "解除终端绑定？",
+  "unpairBody": "解除后设备将不再接收订单。重新绑定需要在后台生成新的配对码。",
+  "cancel": "取消"
+}

@@ -1,8 +1,26 @@
-/// Wire models for the terminal order feed.
+// Wire models for the terminal order feed.
+//
+// Hand-written rather than generated: there are three shapes, they change with
+// the backend in the same commit, and a build_runner step for this would cost
+// more than it saves.
+
+/// The service path, in order. The web console's main button walks the same one
+/// and the API enforces it, so all three agree on what "next" means.
 ///
-/// Hand-written rather than generated: there are three shapes, they change with
-/// the backend in the same commit, and a build_runner step for this would cost
-/// more than it saves.
+/// CANCELLED is deliberately absent: it is not a step along this path, it is the
+/// path being abandoned, and it belongs to the console where a reason can be
+/// typed.
+const orderFlow = <String>[
+  'PENDING',
+  'CONFIRMED',
+  'PREPARING',
+  'READY',
+  'COMPLETED',
+];
+
+/// Position on the path, or -1 for a status that is not on it.
+int orderFlowIndex(String status) => orderFlow.indexOf(status);
+
 class TerminalOrder {
   const TerminalOrder({
     required this.id,
@@ -32,6 +50,32 @@ class TerminalOrder {
 
   /// Not yet accepted by anyone — the state that makes the alarm ring.
   bool get isNew => status == 'PENDING';
+
+  /// Still the counter's problem. COMPLETED and CANCELLED orders leave the board.
+  bool get isOpen => status != 'COMPLETED' && status != 'CANCELLED';
+
+  /// The one step this order can take next, or null if it has nowhere left to go.
+  String? get nextStatus {
+    final i = orderFlowIndex(status);
+    if (i < 0 || i >= orderFlow.length - 1) return null;
+    return orderFlow[i + 1];
+  }
+
+  /// Same order, further along. Used to show a tap immediately instead of making
+  /// the counter wait out the poll interval to see that it registered.
+  TerminalOrder withStatus(String next) => TerminalOrder(
+        id: id,
+        status: next,
+        source: source,
+        createdAt: createdAt,
+        pickupTime: pickupTime,
+        customerName: customerName,
+        customerPhone: customerPhone,
+        notes: notes,
+        totalAmount: totalAmount,
+        drinks: drinks,
+        bowls: bowls,
+      );
 
   static DateTime? _date(Object? v) =>
       v is String ? DateTime.tryParse(v)?.toLocal() : null;
@@ -76,24 +120,12 @@ class OrderDrink {
   final List<String> options;
   final double lineTotal;
 
-  /// 糖度 / 冷热, as the server's enum names — the labels below are the app's, so
-  /// the tablet reads in its own language rather than whatever the website sent.
+  /// 糖度 / 冷热, kept as the server's enum names. The words for them are the
+  /// app's own (`OrderText.preparation`), so the tablet reads in the language it
+  /// is set to rather than whatever the website sent.
   /// Null for a side dish, and for any line taken before the choice existed.
   final String? sugarLevel;
   final String? temperature;
-
-  static const _sugar = {'HALF': '五分糖', 'FULL': '全糖'};
-  static const _temp = {'HOT': '热', 'ROOM': '常温', 'ICED': '加冰'};
-
-  /// How to make it, ready to print — temperature first, since that decides
-  /// which jug it comes out of.
-  String? get preparation {
-    final parts = [
-      _temp[temperature ?? ''],
-      _sugar[sugarLevel ?? ''],
-    ].whereType<String>().toList();
-    return parts.isEmpty ? null : parts.join(' · ');
-  }
 
   factory OrderDrink.fromJson(Map<String, dynamic> j) => OrderDrink(
         name: j['name'] as String? ?? '?',

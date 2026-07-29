@@ -1,0 +1,110 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "Panda Malatang Terminal",
+
+  "pairTitle": "Pair terminal",
+  "pairIntro": "Create a device under Terminals in the admin console, then type its code here.",
+  "pairCodeHint": "ABC123",
+  "pairSubmit": "Pair",
+  "pairSubmitBusy": "Pairing …",
+  "pairAdvanced": "Advanced",
+  "pairAdvancedHide": "Hide advanced",
+  "pairErrorShortCode": "Enter the 6-character code.",
+  "pairErrorUnreachable": "Server unreachable. Check the connection.",
+  "pairErrorRateLimited": "Too many attempts. Try again later.",
+  "pairErrorInvalidCode": "Code invalid or expired.",
+
+  "boardTitleFallback": "Terminal",
+  "profileTooltip": "Profile",
+  "boardEmpty": "No open orders",
+  "offlineBanner": "NO CONNECTION — orders are not arriving right now",
+  "lockedTitle": "This terminal has been blocked",
+  "lockedBody": "Generate a new pairing code in the admin console and pair the device again.",
+  "lockedAction": "Pair again",
+
+  "connNever": "not connected yet",
+  "connJustNow": "updated just now",
+  "connSeconds": "updated {seconds} s ago",
+  "@connSeconds": { "placeholders": { "seconds": { "type": "int" } } },
+  "connMinutes": "updated {minutes} min ago",
+  "@connMinutes": { "placeholders": { "minutes": { "type": "int" } } },
+
+  "stepFailed": "{order} not saved — no connection. Try again.",
+  "@stepFailed": { "placeholders": { "order": { "type": "String", "example": "#0042" } } },
+  "handedOver": "{order} picked up",
+  "@handedOver": { "placeholders": { "order": { "type": "String", "example": "#0042" } } },
+  "undo": "Undo",
+  "alreadyAt": "{order} is already at {status}",
+  "@alreadyAt": { "placeholders": { "order": { "type": "String" }, "status": { "type": "String" } } },
+
+  "statusBadgePENDING": "NEW",
+  "statusBadgeCONFIRMED": "ACCEPTED",
+  "statusBadgePREPARING": "IN PROGRESS",
+  "statusBadgeREADY": "READY",
+  "statusBadgeCOMPLETED": "PICKED UP",
+
+  "statusNamePENDING": "New",
+  "statusNameCONFIRMED": "Accepted",
+  "statusNamePREPARING": "In progress",
+  "statusNameREADY": "Ready",
+  "statusNameCOMPLETED": "Picked up",
+  "statusNameCANCELLED": "Cancelled",
+
+  "nextCONFIRMED": "Accept",
+  "nextPREPARING": "Cook",
+  "nextREADY": "Ready",
+  "nextCOMPLETED": "Picked up",
+
+  "pickupNow": "now",
+  "labelBroth": "BROTH",
+  "labelBoil": "BOIL",
+  "labelTopping": "TOPPING",
+  "without": "WITHOUT: {items}",
+  "@without": { "placeholders": { "items": { "type": "String", "example": "coriander, peanut" } } },
+
+  "spiceNONE": "NONE",
+  "spiceLIGHT": "MILD",
+  "spiceMEDIUM": "MEDIUM",
+  "spiceHOT": "EXTRA HOT",
+
+  "sugarHALF": "50%",
+  "sugarFULL": "100%",
+  "tempHOT": "Hot",
+  "tempROOM": "Room temp.",
+  "tempICED": "Iced",
+
+  "bowlTarget": "{amount} → approx. {grams} g",
+  "@bowlTarget": { "placeholders": { "amount": { "type": "String", "example": "€15.00" }, "grams": { "type": "int" } } },
+
+  "alertHeadline": "{count, plural, =1{NEW ORDER} other{{count} NEW ORDERS}}",
+  "@alertHeadline": { "placeholders": { "count": { "type": "int" } } },
+  "alertAccept": "{count, plural, =1{ACCEPT} other{ACCEPT ALL}}",
+  "@alertAccept": { "placeholders": { "count": { "type": "int" } } },
+  "alertBusy": "Accepting …",
+
+  "quoted": "\u201c{text}\u201d",
+  "@quoted": { "placeholders": { "text": { "type": "String" } } },
+
+  "profileTitle": "Terminal",
+  "fieldName": "Name",
+  "fieldServer": "Server",
+  "fieldPaired": "Paired",
+  "fieldConnection": "Connection",
+  "fieldOpenOrders": "Open orders",
+  "fieldLanguage": "Language",
+
+  "languageSystem": "Device language",
+  "languageGerman": "Deutsch",
+  "languageEnglish": "English",
+  "languageChinese": "中文",
+
+  "testSound": "Test sound",
+  "testSoundPlayed": "Sound played. Didn't hear it? Check the device volume.",
+  "testSoundHint": "Test once before every service. A muted tablet is the one failure the app cannot detect by itself.",
+
+  "unpair": "Unpair",
+  "unpairTitle": "Unpair terminal?",
+  "unpairBody": "The device will stop receiving orders. Pairing it again needs a new code from the admin console.",
+  "cancel": "Cancel"
+}

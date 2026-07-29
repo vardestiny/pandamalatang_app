@@ -3,10 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'dart:io' show Platform;
 
+import 'l10n/app_localizations.dart';
 import 'src/api/terminal_api.dart';
 import 'src/screens/board_screen.dart';
 import 'src/screens/pairing_screen.dart';
 import 'src/services/alarm.dart';
+import 'src/services/app_settings.dart';
 import 'src/services/credentials.dart';
 import 'src/services/order_poller.dart';
 import 'src/theme.dart';
@@ -15,16 +17,47 @@ void main() {
   runApp(const TerminalApp());
 }
 
-class TerminalApp extends StatelessWidget {
+class TerminalApp extends StatefulWidget {
   const TerminalApp({super.key});
 
   @override
+  State<TerminalApp> createState() => _TerminalAppState();
+}
+
+class _TerminalAppState extends State<TerminalApp> {
+  final _settings = AppSettings();
+
+  @override
+  void initState() {
+    super.initState();
+    // Before the first frame the stored language is not known yet, so the app
+    // opens in the device's. That flicker lasts one frame and only on a tablet
+    // whose language differs from its setting — the alternative is a splash
+    // screen on every launch to avoid it.
+    _settings.load();
+  }
+
+  @override
+  void dispose() {
+    _settings.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Panda Malatang Terminal',
-      debugShowCheckedModeBanner: false,
-      theme: pandaTheme(),
-      home: const _Root(),
+    return ListenableBuilder(
+      listenable: _settings,
+      builder: (context, _) => MaterialApp(
+        onGenerateTitle: (context) => L.of(context).appTitle,
+        debugShowCheckedModeBanner: false,
+        theme: pandaTheme(),
+        // Null means the device decides. An unsupported device language falls
+        // back to the first entry, German — the shop's own.
+        locale: _settings.locale,
+        localizationsDelegates: L.localizationsDelegates,
+        supportedLocales: L.supportedLocales,
+        home: _Root(settings: _settings),
+      ),
     );
   }
 }
@@ -33,7 +66,9 @@ class TerminalApp extends StatelessWidget {
 /// a screen: the poller (which holds the set of already-seen order ids) and the
 /// alarm (which holds the audio player).
 class _Root extends StatefulWidget {
-  const _Root();
+  const _Root({required this.settings});
+
+  final AppSettings settings;
 
   @override
   State<_Root> createState() => _RootState();
@@ -119,6 +154,11 @@ class _RootState extends State<_Root> {
       );
     }
 
-    return BoardScreen(poller: poller, alarm: _alarm, onUnpair: _unpair);
+    return BoardScreen(
+      poller: poller,
+      alarm: _alarm,
+      settings: widget.settings,
+      onUnpair: _unpair,
+    );
   }
 }

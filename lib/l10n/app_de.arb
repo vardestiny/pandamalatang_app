@@ -1,0 +1,139 @@
+{
+  "@@locale": "de",
+
+  "appTitle": "Panda Malatang Terminal",
+  "@appTitle": { "description": "Task-switcher title. Not translated — it is the shop's name." },
+
+  "pairTitle": "Terminal koppeln",
+  "pairIntro": "Im Admin unter Terminals ein Gerät anlegen und den Code hier eingeben.",
+  "pairCodeHint": "ABC123",
+  "@pairCodeHint": { "description": "Placeholder in the code field. Kept identical in every language — it is an example of a code, not a word." },
+  "pairSubmit": "Koppeln",
+  "pairSubmitBusy": "Koppeln …",
+  "pairAdvanced": "Erweitert",
+  "pairAdvancedHide": "Erweitert ausblenden",
+  "pairErrorShortCode": "Bitte den 6-stelligen Code eingeben.",
+  "pairErrorUnreachable": "Server nicht erreichbar. Verbindung prüfen.",
+  "pairErrorRateLimited": "Zu viele Versuche. Bitte später erneut.",
+  "pairErrorInvalidCode": "Code ungültig oder abgelaufen.",
+  "@pairErrorInvalidCode": { "description": "One message for every pairing failure — unknown code, expired code, revoked terminal. Telling a guesser which of the three they hit is free help." },
+
+  "boardTitleFallback": "Terminal",
+  "@boardTitleFallback": { "description": "App bar title before the server has said what this terminal is called." },
+  "profileTooltip": "Profil",
+  "boardEmpty": "Keine offenen Bestellungen",
+  "offlineBanner": "KEINE VERBINDUNG — Bestellungen kommen gerade nicht an",
+  "lockedTitle": "Dieses Terminal wurde gesperrt",
+  "lockedBody": "Im Admin einen neuen Kopplungscode erzeugen und das Gerät erneut koppeln.",
+  "lockedAction": "Neu koppeln",
+
+  "connNever": "noch keine Verbindung",
+  "connJustNow": "aktualisiert gerade eben",
+  "connSeconds": "aktualisiert vor {seconds} s",
+  "@connSeconds": { "placeholders": { "seconds": { "type": "int" } } },
+  "connMinutes": "aktualisiert vor {minutes} Min.",
+  "@connMinutes": { "placeholders": { "minutes": { "type": "int" } } },
+
+  "stepFailed": "{order} nicht gespeichert — keine Verbindung. Nochmal versuchen.",
+  "@stepFailed": {
+    "description": "A step that never reached the server. Said out loud because the console and the next shift do not know about it.",
+    "placeholders": { "order": { "type": "String", "example": "#0042" } }
+  },
+  "handedOver": "{order} abgeholt",
+  "@handedOver": { "placeholders": { "order": { "type": "String", "example": "#0042" } } },
+  "undo": "Rückgängig",
+  "alreadyAt": "{order} steht bereits auf {status}",
+  "@alreadyAt": {
+    "description": "The board was a poll behind and the server refused the step.",
+    "placeholders": { "order": { "type": "String" }, "status": { "type": "String" } }
+  },
+
+  "statusBadgePENDING": "NEU",
+  "@statusBadgePENDING": { "description": "Status chip on a card. Shouted, because it is read at arm's length. Languages without capitals use their normal form." },
+  "statusBadgeCONFIRMED": "ANGENOMMEN",
+  "statusBadgePREPARING": "IN ARBEIT",
+  "statusBadgeREADY": "FERTIG",
+  "statusBadgeCOMPLETED": "ABGEHOLT",
+
+  "statusNamePENDING": "Neu",
+  "@statusNamePENDING": { "description": "The same statuses as they read inside a sentence." },
+  "statusNameCONFIRMED": "Angenommen",
+  "statusNamePREPARING": "In Arbeit",
+  "statusNameREADY": "Fertig",
+  "statusNameCOMPLETED": "Abgeholt",
+  "statusNameCANCELLED": "Storniert",
+
+  "nextCONFIRMED": "Annehmen",
+  "@nextCONFIRMED": { "description": "The step button, named for where the tap leads. Same words as the web console's own next-status button." },
+  "nextPREPARING": "Kochen",
+  "nextREADY": "Fertig",
+  "nextCOMPLETED": "Abgeholt",
+
+  "pickupNow": "sofort",
+  "@pickupNow": { "description": "Pickup time for an order with none — as soon as it is made." },
+  "labelBroth": "BRÜHE",
+  "labelBoil": "KOCHEN",
+  "labelTopping": "TOPPING",
+  "without": "OHNE: {items}",
+  "@without": {
+    "description": "Where allergies live. Red, bold, never abbreviated.",
+    "placeholders": { "items": { "type": "String", "example": "Koriander, Erdnuss" } }
+  },
+
+  "spiceNONE": "OHNE",
+  "spiceLIGHT": "MILD",
+  "spiceMEDIUM": "MITTEL",
+  "spiceHOT": "SEHR SCHARF",
+
+  "sugarHALF": "50 %",
+  "@sugarHALF": { "description": "糖度. Matches the web console's own sugar labels." },
+  "sugarFULL": "100 %",
+  "tempHOT": "Heiß",
+  "tempROOM": "Zimmertemp.",
+  "tempICED": "Mit Eis",
+
+  "bowlTarget": "{amount} → ca. {grams} g",
+  "@bowlTarget": {
+    "description": "What the customer paid and roughly what that weighs. The amount arrives already formatted for the locale.",
+    "placeholders": { "amount": { "type": "String", "example": "15,00 €" }, "grams": { "type": "int" } }
+  },
+
+  "alertHeadline": "{count, plural, =1{NEUE BESTELLUNG} other{{count} NEUE BESTELLUNGEN}}",
+  "@alertHeadline": { "placeholders": { "count": { "type": "int" } } },
+  "alertAccept": "{count, plural, =1{ANNEHMEN} other{ALLE ANNEHMEN}}",
+  "@alertAccept": {
+    "description": "The alarm's only exit.",
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "alertBusy": "Wird übernommen …",
+
+  "quoted": "„{text}“",
+  "@quoted": {
+    "description": "A customer's own words, in the quotation marks the reader's language uses.",
+    "placeholders": { "text": { "type": "String" } }
+  },
+
+  "profileTitle": "Terminal",
+  "fieldName": "Name",
+  "fieldServer": "Server",
+  "fieldPaired": "Gekoppelt",
+  "fieldConnection": "Verbindung",
+  "fieldOpenOrders": "Offene Bestellungen",
+  "fieldLanguage": "Sprache",
+
+  "languageSystem": "Gerätesprache",
+  "@languageSystem": { "description": "Follow whatever the tablet itself is set to." },
+  "languageGerman": "Deutsch",
+  "languageEnglish": "English",
+  "languageChinese": "中文",
+  "@languageChinese": { "description": "Language names stay in their own language in every locale — a person looking for their language recognises it written their way." },
+
+  "testSound": "Ton testen",
+  "testSoundPlayed": "Ton abgespielt. Nicht gehört? Lautstärke am Gerät prüfen.",
+  "testSoundHint": "Vor jedem Service einmal testen. Ein stummgeschaltetes Tablet ist der einzige Fehler, den die App selbst nicht erkennen kann.",
+
+  "unpair": "Entkoppeln",
+  "unpairTitle": "Terminal entkoppeln?",
+  "unpairBody": "Das Gerät empfängt danach keine Bestellungen mehr. Für die erneute Kopplung wird ein neuer Code aus dem Admin gebraucht.",
+  "cancel": "Abbrechen"
+}

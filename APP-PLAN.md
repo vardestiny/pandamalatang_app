@@ -105,6 +105,37 @@ without are different work.
 Exclusions keep the red warning treatment they have on the web ticket. That is
 where allergies live and a miss has real consequences.
 
+### The step button
+
+One button per card, and it is the whole of what the terminal can do to an order:
+
+```
+NEU → [ Annehmen ] → ANGENOMMEN → [ Kochen ] → IN ARBEIT
+    → [ Fertig ] → FERTIG → [ Abgeholt ] → off the board
+```
+
+The path, the words and the rule for walking it are the web console's, shared in
+`@/lib/order-flow` on the backend: one member of staff uses both screens, often
+within the same minute, and two definitions of "next" would eventually disagree
+in front of a customer.
+
+**Forward only.** A shop with two tablets will sooner or later have one showing a
+board a poll behind, and a stale tap must not drag an order that is already
+boiling back to "accepted". Skipping ahead is allowed — a counter that hands over
+a drink it never marked as cooking is describing what actually happened.
+
+**The tap shows immediately**, before the server answers, because the poll is ten
+seconds and a card that does not react reads as a dead button. If the step fails
+to reach the server it is taken back off the card and said out loud: unlike
+silencing the alarm, a step nobody recorded is one the console, the kitchen and
+the next shift will not know about.
+
+**Abgeholt can be undone**, for eight seconds, from the toast that confirms it.
+It is the only step that takes an order off the board, so it is the only misfire
+a staff member cannot correct from the tablet — and the only backward move the
+API permits. Cancelling is still the console's job: it needs a reason and a
+decision about the customer's money.
+
 ## 4. The alert
 
 The critical feature, so it is specified rather than left to taste.
@@ -133,8 +164,27 @@ may genuinely not be heard.
 ## 5. Profile / settings
 
 Not the point of the app, so it stays small: terminal name, when it paired, the
-backend URL, last poll time, a **test sound** button (so staff can check the
-volume before service rather than during it), and unpair.
+backend URL, last poll time, the **language**, a **test sound** button (so staff
+can check the volume before service rather than during it), and unpair.
+
+**Language: German, English, Chinese** — the three the web console already
+speaks, using the console's own words for the domain terms (汤底 / BRÜHE / BROTH,
+接单 / Annehmen / Accept). One member of staff reads both screens.
+
+It follows the tablet by default and can be pinned in Profile. The pinned case is
+the one that matters: shop equipment arrives set to whatever language it shipped
+in, and the person reading it all shift is rarely the person who set it up. The
+four choices are chips rather than a dropdown, each written in its own language —
+somebody who has landed in a script they cannot read needs to spot their own
+without first working out how to open a menu.
+
+Nothing on the wire changes. Statuses, spice, sugar and temperature stay English
+enum names, and every word for them is looked up on the device: a German string
+sent from the server could not be shown to a tablet set to Chinese. `l10n_ext.dart`
+is where those lookups live, along with money (15,00 € / €15.00), dates, and the
+one thing deliberately *not* localised — pickup times stay 24-hour everywhere,
+because the console is 24-hour too and an am/pm slip is an order handed over an
+hour late.
 
 Test sound matters more than it looks: the failure mode of an alarm app is a muted
 device, and the only way to catch that is to have made a noise on purpose.
@@ -156,3 +206,8 @@ Steps 1–5 are the product. 6 is comfort.
 Printing, cash handling, editing an order from the terminal, multi-shop, offline
 queueing of acknowledgements, push notifications, staff-level accounts (the
 terminal is the identity, not the person).
+
+Weighing stays on the console too. The scale is there, the money is there, and a
+handover from the tablet therefore records that the customer took the order and
+nothing about what it finally weighed — which is the same thing the console's own
+Abgeholt button does when no weights were typed.

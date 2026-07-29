@@ -36,16 +36,13 @@ class OrderPoller extends ChangeNotifier {
   /// terminal that has quietly stopped receiving looks exactly like a quiet shop.
   bool get isOffline => consecutiveFailures >= 2;
 
-  /// Human-readable connection state, shown permanently rather than only on
-  /// failure: silence from a terminal looks identical to a quiet shop, so the
-  /// screen has to say which it is.
-  String get lastSeenSummary {
-    if (lastSuccess == null) return 'noch keine Verbindung';
-    final secs = DateTime.now().difference(lastSuccess!).inSeconds;
-    if (secs < 20) return 'aktualisiert gerade eben';
-    if (secs < 120) return 'aktualisiert vor $secs s';
-    return 'aktualisiert vor ${(secs / 60).floor()} Min.';
-  }
+  /// Seconds since the last successful poll, or null if there has not been one.
+  ///
+  /// The sentence this turns into lives in `lastSeenText` on the widget side:
+  /// this class has no `BuildContext` and therefore no language.
+  int? get secondsSinceLastSuccess => lastSuccess == null
+      ? null
+      : DateTime.now().difference(lastSuccess!).inSeconds;
 
   void start() {
     _timer?.cancel();
@@ -68,7 +65,8 @@ class OrderPoller extends ChangeNotifier {
     try {
       final feed = await _api.fetchOrders();
       terminalName = feed.terminalName;
-      orders = feed.orders;
+      _feed = feed.orders;
+      _rebuild();
       lastSuccess = DateTime.now();
       consecutiveFailures = 0;
       unauthorized = false;
@@ -107,6 +105,45 @@ class OrderPoller extends ChangeNotifier {
   bool _bootstrapping = true;
   final Set<int> _pending = <int>{};
 
+  /// The feed exactly as the server sent it, before local intent is laid over it.
+  /// Kept separate so a step that fails can be taken back off again.
+  List<TerminalOrder> _feed = const [];
+
+  /// Steps a human has tapped that the server has not confirmed back yet.
+  ///
+  /// The poll runs every ten seconds. Without this, a card would sit unchanged
+  /// for most of that after a tap, and the second tap that provokes is a step
+  /// skipped rather than a step repeated.
+  final Map<int, String> _localStatus = <int, String>{};
+
+  /// Rebuild the visible board from the feed plus whatever is still in flight.
+  void _rebuild() {
+    if (_localStatus.isEmpty) {
+      orders = _feed;
+      return;
+    }
+    // An order that has left the feed is finished or cancelled; either way the
+    // server has spoken and there is nothing left to hold on its behalf.
+    final present = _feed.map((o) => o.id).toSet();
+    _localStatus.removeWhere((id, _) => !present.contains(id));
+
+    orders = [
+      for (final o in _feed) _localStatus[o.id] == null ? o : _merge(o),
+    ];
+  }
+
+  TerminalOrder _merge(TerminalOrder o) {
+    final wanted = _localStatus[o.id]!;
+    final here = orderFlowIndex(o.status);
+    // Caught up — or somewhere off the path entirely, which only a cancellation
+    // does, and a cancellation outranks anything this tablet wanted.
+    if (here < 0 || here >= orderFlowIndex(wanted)) {
+      _localStatus.remove(o.id);
+      return o;
+    }
+    return o.withStatus(wanted);
+  }
+
   /// Called when a human presses the accept button.
   Future<void> acknowledge(int orderId) async {
     _pending.remove(orderId);
@@ -120,6 +157,46 @@ class OrderPoller extends ChangeNotifier {
       // the order is still on the board either way.
     }
     await poll();
+  }
+
+  /// Called when a human presses the step button on a card — Kochen, Fertig,
+  /// Abgeholt, or the undo that puts a handover back.
+  ///
+  /// Returns the status the order ended up in, or null if the step did not
+  /// happen at all. A null is worth showing: unlike the alarm, where silencing
+  /// locally is the right answer even offline, a step nobody recorded means the
+  /// other screen and the next shift do not know about it.
+  Future<String?> advance(int orderId, String status) async {
+    // Stepping past a still-ringing order is an acknowledgement as well; the
+    // alarm must not outlive the tap that dealt with the order.
+    if (_pending.remove(orderId)) {
+      pending = orders.where((o) => _pending.contains(o.id)).toList();
+    }
+
+    _localStatus[orderId] = status;
+    _rebuild();
+    notifyListeners();
+
+    String? settled;
+    try {
+      settled = await _api.setStatus(orderId, status);
+      // The server is allowed to disagree — forward-only, and this board may be
+      // a poll behind. Show where the order really is.
+      _localStatus[orderId] = settled;
+    } on TerminalUnauthorized {
+      unauthorized = true;
+      stop();
+      notifyListeners();
+      return null;
+    } catch (_) {
+      _localStatus.remove(orderId);
+      _rebuild();
+      notifyListeners();
+      return null;
+    }
+
+    await poll();
+    return settled;
   }
 
   Future<void> acknowledgeAll() async {

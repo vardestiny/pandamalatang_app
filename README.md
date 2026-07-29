@@ -235,10 +235,31 @@ noise on purpose beforehand rather than discover it during a rush.
 ```sh
 fvm flutter pub get           # after any pubspec change
 fvm flutter analyze           # clean
-fvm flutter test              # 9 tests, all passing
+fvm flutter test              # 34 tests, all passing
 fvm flutter run -d <id>       # r = hot reload, R = restart, q = quit
 fvm flutter clean             # when a build fails for no visible reason
 ```
+
+### Looking at the layout without a tablet
+
+```sh
+tool/run-web-dev.sh                        # against https://pandamalatang.com
+tool/run-web-dev.sh http://localhost:3000  # against a local pangdamalatang
+```
+
+Development only, and it is not a target this app ships. `web/` is git-ignored
+and the script scaffolds it on first run; the shipping platforms remain iOS and
+Android. The alarm, the wakelock and the silent-switch override — the three
+things this app exists for — do not work in a browser, so a green board here
+proves the layout and the API wiring and nothing else.
+
+It launches Chrome with `--disable-web-security` on a throwaway profile because
+the terminal API sends no `Access-Control-Allow-Origin`, and should not: it
+serves customer names and phone numbers to a paired tablet, so opening it to
+browser origins to save a developer a cable is a bad trade. The bypass therefore
+lives in the browser, lasts as long as the process, and changes nothing on the
+server. **Do not browse anything else in that window** — with web security off,
+any page it loads can read any site you are signed in to.
 
 The tests are worth knowing about: they cover the logic that decides what counts
 as a *new* order, which is the part that would fail quietly and expensively.
@@ -255,27 +276,32 @@ screams about the whole board and staff learn to ignore it.
 ```
 lib/
   main.dart                     boot; decides pairing vs. board, owns poller + alarm
+  l10n/app_{de,en,zh}.arb       every string in the app; de is the template
   src/
-    api/terminal_api.dart       pair / fetch orders / acknowledge
+    api/terminal_api.dart       pair / fetch orders / acknowledge / step
     models/order.dart           order, drink lines with add-ons, bowls
     services/
       credentials.dart          token → Keychain, settings → SharedPreferences
-      order_poller.dart         the 10s loop and what counts as "new"
+      app_settings.dart         the chosen language, and who to tell when it changes
+      order_poller.dart         the 10s loop, what counts as "new", steps in flight
       alarm.dart                looping sound, silent-switch override, escalation
     screens/
       pairing_screen.dart       code entry
       board_screen.dart         open + done-today, connection state
       alert_overlay.dart        the full-screen alarm
       profile_screen.dart       identity, test sound, unpair
-    widgets/order_card.dart     the prep instruction
+    widgets/order_card.dart     the prep instruction and its one step button
+    l10n_ext.dart               enum names → words, money, times, order numbers
     theme.dart
 assets/sounds/new_order.wav     two-tone chirp with a gap, so a loop is audible as a loop
-test/order_poller_test.dart     9 tests
+test/order_poller_test.dart     the poll loop, the alarm, steps in flight
+test/order_card_test.dart       the step button, and the card in all three languages
 ```
 
 Backend side, in the `pangdamalatang` repo:
-`src/app/api/terminal/{pair,orders}` and `orders/[id]/ack`, plus the admin
-screen at `src/app/admin/(protected)/terminals/`.
+`src/app/api/terminal/{pair,orders}`, `orders/[id]/ack` and
+`orders/[id]/status`, the shared service path in `src/lib/order-flow.ts`, plus
+the admin screen at `src/app/admin/(protected)/terminals/`.
 
 ---
 
@@ -289,13 +315,20 @@ Stated plainly, because some of these matter more than they look:
   path is verified against production; the noise is not.
 - **`Podfile.lock` is incomplete** — see the warning above; run `pod install`.
 - **iOS and Android only.** A `flutter create` run once added `macos/` and `web/`;
-  both are gone. This app is a tablet on a counter, and a desktop or browser
-  build reproduces none of what makes it work — no silent switch, no alarm
+  both are gone from the repo. This app is a tablet on a counter, and a desktop or
+  browser build reproduces none of what makes it work — no silent switch, no alarm
   stream, no wakelock. The website is a separate project (`pangdamalatang`).
+  `tool/run-web-dev.sh` scaffolds a git-ignored `web/` for looking at the layout
+  on a laptop; that is a local convenience, not a platform this app supports.
 - **Polling, not push.** If wifi drops the app is blind, so it shows connection
   state permanently and warns after two consecutive failed polls. A terminal
   that has silently stopped receiving looks exactly like a quiet shop, and that
   is the failure this app exists to prevent.
 - **Foreground-only alarm** — see the iOS decision above.
-- **German-only UI.** The console is trilingual; this app is not. Deliberate for
-  v1: the terminal has one audience standing in one kitchen.
+- **German, English and Chinese**, the same three the console speaks. The
+  language follows the tablet unless someone picks one under Profil → Sprache,
+  which is the case that matters: shop equipment arrives set to whatever language
+  it shipped in, and the person reading it is not the person who set it up.
+  Wire values stay English enum names — `PREPARING`, `HALF`, `ICED` — because a
+  German word arriving in a JSON field could not be shown to a tablet set to
+  Chinese.

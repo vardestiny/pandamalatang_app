@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../l10n/app_localizations.dart';
 import '../l10n_ext.dart';
+import '../models/order.dart';
 import '../services/alarm.dart';
 import '../services/app_settings.dart';
 import '../services/order_poller.dart';
@@ -71,12 +72,15 @@ class _BoardScreenState extends State<BoardScreen> {
   /// Every outcome is spoken out loud. A step that silently failed would leave
   /// the board looking finished while the console, the kitchen and the next
   /// shift still show the order sitting where it was.
-  Future<void> _advance(int id, String next) async {
+  Future<void> _advance(TerminalOrder order, String next) async {
+    final id = order.id;
     final settled = await widget.poller.advance(id, next);
     if (!mounted) return;
 
     final l = L.of(context);
-    final number = l.orderNumber(id);
+    // The customer's code, not the row id — the snack bar has to name the order
+    // the way the person at the counter would.
+    final number = l.orderNumber(order.reference);
     final messenger = ScaffoldMessenger.of(context);
     messenger.clearSnackBars();
 
@@ -221,7 +225,7 @@ class _BoardScreenState extends State<BoardScreen> {
                   final order = open[i];
                   return OrderCardView(
                     order: order,
-                    onAdvance: (next) => _advance(order.id, next),
+                    onAdvance: (next) => _advance(order, next),
                   );
                 },
               ),

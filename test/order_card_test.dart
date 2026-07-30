@@ -8,6 +8,7 @@ import 'package:pandamalatang_terminal/src/widgets/order_card.dart';
 
 TerminalOrder orderAt(String status) => TerminalOrder.fromJson({
       'id': 1042,
+      'reference': 'K7F2QM',
       'status': status,
       'source': 'ONLINE',
       'createdAt': DateTime.now().toIso8601String(),
@@ -37,6 +38,33 @@ Future<void> pumpCard(
     ));
 
 void main() {
+  testWidgets('the card shows the customer\'s code, never the row id', (tester) async {
+    // The whole point of the reference: the id is internal, and a padded id on
+    // screen told anyone reading the board how many orders the shop had taken.
+    await pumpCard(tester, orderAt('CONFIRMED'));
+
+    expect(find.text('#K7F2QM'), findsOneWidget);
+    expect(find.text('#1042'), findsNothing);
+  });
+
+  testWidgets('falls back to the id against a backend without the field',
+      (tester) async {
+    // An older server sends no `reference`. The card must still identify the
+    // order rather than render a blank where the number goes.
+    final legacy = TerminalOrder.fromJson({
+      'id': 1042,
+      'status': 'CONFIRMED',
+      'source': 'ONLINE',
+      'createdAt': DateTime.now().toIso8601String(),
+      'totalAmount': 4.3,
+      'drinks': const [],
+      'bowls': const [],
+    });
+    await pumpCard(tester, legacy);
+
+    expect(find.text('#1042'), findsOneWidget);
+  });
+
   testWidgets('the button names the step, in the console\'s words', (tester) async {
     for (final (status, label) in const [
       ('PENDING', 'Annehmen'),
@@ -101,7 +129,8 @@ void main() {
 
       expect(find.text(step), findsOneWidget, reason: 'step button in $locale');
       expect(find.text(badge), findsOneWidget, reason: 'status chip in $locale');
-      expect(find.textContaining('1042'), findsOneWidget);
+      expect(find.text('#K7F2QM'), findsOneWidget,
+          reason: 'the order code is the same string in every language');
     }
   });
 

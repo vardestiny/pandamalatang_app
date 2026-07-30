@@ -89,8 +89,9 @@ extension OrderText on L {
 
   String date(DateTime when) => DateFormat.yMd(localeName).format(when);
 
-  /// Order number, zero-padded so a column of them lines up.
-  String orderNumber(int id) => '#${id.toString().padLeft(4, '0')}';
+  /// The order's public code, as the customer sees it on their confirmation.
+  /// Already fixed-width, so a column of them lines up without padding.
+  String orderNumber(String reference) => '#$reference';
 
   /// Connection state, shown permanently rather than only on failure: silence
   /// from a terminal looks identical to a quiet shop, so the screen has to say

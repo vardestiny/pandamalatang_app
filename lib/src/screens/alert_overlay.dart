@@ -165,11 +165,14 @@ class _AlertCard extends StatelessWidget {
           Row(
             children: [
               Text(
-                l.orderNumber(order.id),
+                l.orderNumber(order.reference),
                 style: const TextStyle(
                   fontSize: 30,
                   fontWeight: FontWeight.w900,
+                  // Tabular figures keep a column of codes aligned; the tracking
+                  // is so the letters in one stay readable across the room.
                   fontFeatures: [FontFeature.tabularFigures()],
+                  letterSpacing: 2,
                 ),
               ),
               const Spacer(),

@@ -24,6 +24,7 @@ int orderFlowIndex(String status) => orderFlow.indexOf(status);
 class TerminalOrder {
   const TerminalOrder({
     required this.id,
+    required this.reference,
     required this.status,
     required this.source,
     required this.createdAt,
@@ -37,6 +38,12 @@ class TerminalOrder {
   });
 
   final int id;
+
+  /// The code the customer was given — six opaque characters, not a sequence.
+  /// `id` still addresses the ack and status calls; this is what goes on screen,
+  /// so the board and the customer are quoting the same thing.
+  final String reference;
+
   final String status;
   final String source;
   final DateTime createdAt;
@@ -65,6 +72,7 @@ class TerminalOrder {
   /// the counter wait out the poll interval to see that it registered.
   TerminalOrder withStatus(String next) => TerminalOrder(
         id: id,
+        reference: reference,
         status: next,
         source: source,
         createdAt: createdAt,
@@ -82,6 +90,9 @@ class TerminalOrder {
 
   factory TerminalOrder.fromJson(Map<String, dynamic> j) => TerminalOrder(
         id: j['id'] as int,
+        // Falls back to the id so a tablet on this build still shows *something*
+        // against an older backend that does not send the field yet.
+        reference: j['reference'] as String? ?? '${j['id']}',
         status: j['status'] as String? ?? 'PENDING',
         source: j['source'] as String? ?? 'ONLINE',
         // The feed always sends createdAt; falling back to "now" keeps a

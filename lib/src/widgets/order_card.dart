@@ -87,8 +87,14 @@ class _OrderCardViewState extends State<OrderCardView> {
           Row(
             children: [
               Text(
-                l.orderNumber(order.id),
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+                l.orderNumber(order.reference),
+                // Tracked out: the code is letters as well as digits now, and
+                // a staff member reads it back against what a customer says.
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.5,
+                ),
               ),
               const SizedBox(width: 10),
               Container(

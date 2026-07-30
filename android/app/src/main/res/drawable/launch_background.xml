@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Modify this file to customize your launch splash screen -->
+<!-- What the tablet shows while the Flutter engine starts. Default was bare
+     white, which on a wall-mounted screen reads as a crash for the half-second it
+     lasts. Cream plus the logo, so a launch looks like the app. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@android:color/white" />
+    <item android:drawable="@color/panda_cream" />
 
-    <!-- You can insert your own image assets here -->
-    <!-- <item>
+    <!-- The launcher icon: already the emblem on the same cream tile, so it sits
+         on this background with no visible edge. -->
+    <item>
         <bitmap
             android:gravity="center"
-            android:src="@mipmap/launch_image" />
-    </item> -->
+            android:src="@mipmap/ic_launcher" />
+    </item>
 </layer-list>

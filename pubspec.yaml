@@ -53,3 +53,6 @@ flutter:
 
   assets:
     - assets/sounds/
+    # The shop's emblem, generated from the same original as the website's by
+    # ../pangdamalatang/scripts/make-logo-assets.mjs. Not hand-edited.
+    - assets/brand/

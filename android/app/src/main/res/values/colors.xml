@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- --cream from the site's palette. The same value the Flutter theme paints
+         with, so the launch window and the first frame are the same colour and
+         there is no flash between them. -->
+    <color name="panda_cream">#FDF6EC</color>
+</resources>

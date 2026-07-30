@@ -8,6 +8,7 @@ import '../services/app_settings.dart';
 import '../services/order_poller.dart';
 import '../theme.dart';
 import '../widgets/order_card.dart';
+import '../widgets/panda_logo.dart';
 import 'alert_overlay.dart';
 import 'profile_screen.dart';
 
@@ -150,9 +151,23 @@ class _BoardScreenState extends State<BoardScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          poller.terminalName.isEmpty ? l.boardTitleFallback : poller.terminalName,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+        // The emblem next to the terminal's own name ("Theke", "Küche"): the name
+        // is what staff need, the logo is what makes a wall-mounted tablet
+        // recognisably this shop's rather than a stray Android app.
+        title: Row(
+          children: [
+            const PandaLogo(height: 34),
+            const SizedBox(width: 12),
+            Flexible(
+              child: Text(
+                poller.terminalName.isEmpty
+                    ? l.boardTitleFallback
+                    : poller.terminalName,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
         actions: [
           IconButton(

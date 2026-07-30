@@ -4,6 +4,7 @@ import '../../l10n/app_localizations.dart';
 import '../api/terminal_api.dart';
 import '../services/credentials.dart';
 import '../theme.dart';
+import '../widgets/panda_logo.dart';
 
 /// First launch: turn a pairing code from the admin console into a token.
 class PairingScreen extends StatefulWidget {
@@ -91,8 +92,8 @@ class _PairingScreenState extends State<PairingScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text('🐼', style: TextStyle(fontSize: 48)),
-                const SizedBox(height: 8),
+                const PandaLogo(height: 76),
+                const SizedBox(height: 12),
                 Text(
                   l.pairTitle,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(

@@ -235,7 +235,7 @@ noise on purpose beforehand rather than discover it during a rush.
 ```sh
 fvm flutter pub get           # after any pubspec change
 fvm flutter analyze           # clean
-fvm flutter test              # 34 tests, all passing
+fvm flutter test              # 37 tests, all passing
 fvm flutter run -d <id>       # r = hot reload, R = restart, q = quit
 fvm flutter clean             # when a build fails for no visible reason
 ```
@@ -331,4 +331,5 @@ Stated plainly, because some of these matter more than they look:
   it shipped in, and the person reading it is not the person who set it up.
   Wire values stay English enum names — `PREPARING`, `HALF`, `ICED` — because a
   German word arriving in a JSON field could not be shown to a tablet set to
-  Chinese.
+  Chinese. Food names are the exception: they live only in the menu, so the app
+  sends `Accept-Language` and the feed names each line from `name_de/en/zh`.

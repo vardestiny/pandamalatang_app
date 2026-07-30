@@ -41,6 +41,15 @@ class _BoardScreenState extends State<BoardScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // The resolved locale, which is the one the board is actually painted in —
+    // not `settings.locale`, which is null whenever the tablet is following the
+    // device. Only this one is guaranteed to match what the reader sees.
+    widget.poller.setLocale(Localizations.localeOf(context).languageCode);
+  }
+
+  @override
   void dispose() {
     widget.poller.removeListener(_onPoll);
     WakelockPlus.disable();

@@ -36,6 +36,14 @@ class TerminalApi {
   final String? token;
   final http.Client _client;
 
+  /// The language this tablet is painted in, sent so the feed names the food in
+  /// it. Not final: the picker in Profile changes it without re-pairing.
+  ///
+  /// Only the food needs the server's help. Statuses, spice and sugar are enum
+  /// names the app translates itself — but "Koriander" exists nowhere in the
+  /// app, and a cook who cannot read it is the whole point of the red line.
+  String localeCode = 'de';
+
   // Long enough for a slow shop connection, short enough that a hung request
   // does not stall the next poll behind it.
   static const _timeout = Duration(seconds: 15);
@@ -44,6 +52,7 @@ class TerminalApi {
 
   Map<String, String> get _headers => {
         'Content-Type': 'application/json',
+        'Accept-Language': localeCode,
         if (token != null) 'Authorization': 'Bearer $token',
       };
 

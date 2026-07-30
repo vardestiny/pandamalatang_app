@@ -61,6 +61,18 @@ class OrderPoller extends ChangeNotifier {
     _api = api;
   }
 
+  /// Tell the server which language to name the food in.
+  ///
+  /// Polls straight away when it changes, rather than leaving the board in the
+  /// old language for up to ten seconds: somebody who just switched language is
+  /// looking at the screen, and a board that does not react reads as a setting
+  /// that did not take.
+  void setLocale(String code) {
+    if (_api.localeCode == code) return;
+    _api.localeCode = code;
+    unawaited(poll());
+  }
+
   Future<void> poll() async {
     try {
       final feed = await _api.fetchOrders();

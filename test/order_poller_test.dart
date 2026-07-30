@@ -27,6 +27,7 @@ Map<String, dynamic> order(int id, {String status = 'PENDING'}) => {
 /// how the offline cases are written.
 TerminalApi apiReturning(
   List<Map<String, dynamic>> Function() orders, {
+  List<String>? languages,
   // Growable, and nullable rather than defaulted: a `const []` here would throw
   // inside the handler on the first add, and the client swallows that as a
   // failed request — which is a confusing way to find out about a typo.
@@ -52,6 +53,7 @@ TerminalApi apiReturning(
         headers: {'content-type': 'application/json'},
       );
     }
+    languages?.add(req.headers['accept-language'] ?? '(none)');
     return http.Response(
       jsonEncode({
         'serverTime': DateTime.now().toIso8601String(),
@@ -242,6 +244,55 @@ void main() {
     await poller.advance(2, 'PREPARING');
 
     expect(poller.pending, isEmpty);
+  });
+
+  test('the feed is asked for names in the language the board is in', () async {
+    // The card labels are translated on the device, but "Koriander" only exists
+    // on the server. Without this header a Chinese-speaking cook reads a German
+    // allergy line.
+    final languages = <String>[];
+    final poller = OrderPoller(
+      api: apiReturning(() => [order(1)], languages: languages),
+    );
+
+    await poller.poll();
+    expect(languages.last, 'de', reason: 'German until told otherwise');
+
+    poller.setLocale('zh');
+    await Future<void>.delayed(Duration.zero);
+    expect(languages.last, 'zh');
+  });
+
+  test('switching language refetches instead of waiting out the poll', () async {
+    // Ten seconds of the previous language reads as a setting that did not take.
+    final languages = <String>[];
+    final poller = OrderPoller(
+      api: apiReturning(() => [order(1)], languages: languages),
+    );
+    await poller.poll();
+    final before = languages.length;
+
+    poller.setLocale('en');
+    await Future<void>.delayed(Duration.zero);
+
+    expect(languages.length, before + 1);
+  });
+
+  test('setting the same language again does not refetch', () async {
+    // didChangeDependencies fires for reasons that have nothing to do with
+    // language; every one of them must not cost a request.
+    final languages = <String>[];
+    final poller = OrderPoller(
+      api: apiReturning(() => [order(1)], languages: languages),
+    );
+    await poller.poll();
+    final before = languages.length;
+
+    poller.setLocale('de');
+    poller.setLocale('de');
+    await Future<void>.delayed(Duration.zero);
+
+    expect(languages.length, before);
   });
 
   test('two consecutive failures count as offline', () async {

@@ -178,9 +178,23 @@ four choices are chips rather than a dropdown, each written in its own language 
 somebody who has landed in a script they cannot read needs to spot their own
 without first working out how to open a menu.
 
-Nothing on the wire changes. Statuses, spice, sugar and temperature stay English
-enum names, and every word for them is looked up on the device: a German string
-sent from the server could not be shown to a tablet set to Chinese. `l10n_ext.dart`
+Two kinds of word, handled two different ways.
+
+**The app's own** — statuses, spice, sugar, temperature, every label and button —
+stay English enum names on the wire and are looked up on the device. A German
+string sent from the server could not be shown to a tablet set to Chinese.
+
+**The food's** — "Assam Milchtee", "Mala", "Koriander" — exist only in the menu,
+so the app cannot translate them and does not try. It sends `Accept-Language`
+with its resolved locale and the feed names each line in that language, from the
+menu's own `name_de` / `name_en` / `name_zh` columns. The line's stored snapshot
+is the fallback, for a menu item deleted while its order is still cooking.
+
+That is a live lookup rather than a stored one, which is the opposite of what a
+receipt should do and right here for the same reason: this board only shows
+orders open right now, and a cook needs the ingredient named in a language they
+can read. The snapshot stays the record of truth for the confirmation email, the
+console's history and the reports. `l10n_ext.dart`
 is where those lookups live, along with money (15,00 € / €15.00), dates, and the
 one thing deliberately *not* localised — pickup times stay 24-hour everywhere,
 because the console is 24-hour too and an am/pm slip is an order handed over an

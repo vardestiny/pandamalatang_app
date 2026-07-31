@@ -61,6 +61,14 @@ class OrderPoller extends ChangeNotifier {
     _api = api;
   }
 
+  /// Today's orders, fetched on demand.
+  ///
+  /// Goes through the poller rather than the screen holding its own client, so the
+  /// history is fetched with whatever token and locale are current — including
+  /// after a re-pair or a language change, both of which swap or mutate `_api`
+  /// underneath everything that borrowed it.
+  Future<OrderHistory> fetchHistory() => _api.fetchHistory();
+
   /// Tell the server which language to name the food in.
   ///
   /// Polls straight away when it changes, rather than leaving the board in the

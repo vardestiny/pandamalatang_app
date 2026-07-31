@@ -210,3 +210,46 @@ class OrderFeed {
             .toList(),
       );
 }
+
+/// Today's orders, and what they came to.
+///
+/// The board drops an order the moment it is handed over, which is right for
+/// getting through a rush and useless ten minutes later when the customer comes
+/// back to ask about it. Orders here use the same [TerminalOrder] as the board, so
+/// the history screen renders them with the same card.
+class OrderHistory {
+  const OrderHistory({
+    required this.orders,
+    required this.count,
+    required this.cancelled,
+    required this.total,
+    required this.truncated,
+  });
+
+  final List<TerminalOrder> orders;
+
+  /// Orders that count towards [total] — everything except the cancelled ones.
+  final int count;
+  final int cancelled;
+
+  /// The day's takings. Excludes cancelled orders: nobody paid for those, and a
+  /// total that includes them is a wrong number on a screen staff will trust.
+  final double total;
+
+  /// The server stopped at its cap. Shown rather than swallowed, because a list
+  /// that quietly stops reads as "that was the whole day".
+  final bool truncated;
+
+  factory OrderHistory.fromJson(Map<String, dynamic> j) {
+    final summary = j['summary'] as Map<String, dynamic>? ?? const {};
+    return OrderHistory(
+      orders: (j['orders'] as List<dynamic>? ?? const [])
+          .map((e) => TerminalOrder.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      count: summary['orders'] as int? ?? 0,
+      cancelled: summary['cancelled'] as int? ?? 0,
+      total: (summary['total'] as num?)?.toDouble() ?? 0,
+      truncated: j['truncated'] as bool? ?? false,
+    );
+  }
+}

@@ -109,5 +109,15 @@
   "unpair": "Unpair",
   "unpairTitle": "Unpair terminal?",
   "unpairBody": "The device will stop receiving orders. Pairing it again needs a new code from the admin console.",
-  "cancel": "Cancel"
+  "cancel": "Cancel",
+
+  "historyTitle": "Today",
+  "historyTooltip": "Today's orders",
+  "historyEmpty": "No orders yet today.",
+  "historyFailed": "Could not load orders.",
+  "historyRetry": "Try again",
+  "historySummary": "{count, plural, =1{1 order} other{{count} orders}}",
+  "historyCancelled": "{count, plural, =1{1 cancelled} other{{count} cancelled}}",
+  "historyTakings": "Today's takings",
+  "historyTruncated": "Only the most recent 200 orders are shown."
 }

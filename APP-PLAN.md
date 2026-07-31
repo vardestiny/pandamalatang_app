@@ -76,7 +76,19 @@ A pairing code costs one admin screen and is revocable.
 
 ## 3. What the terminal shows
 
-Two lists, one screen: **open** and **done today**. Open is what matters.
+Two lists — **open** and **today** — on two screens rather than the one this plan
+originally called for. The board stayed a single list of open orders, and today's
+record moved behind the receipt icon in the app bar (`HistoryScreen`).
+
+Reason: the board is a work queue read across a counter at arm's length, and a
+second list under it pushes the open orders off the top of a tablet screen exactly
+when there are most of them. The history is a different question, asked at a
+different moment — a customer coming back with a code, or the till at closing time —
+and it is fetched on the tap rather than added to the ten-second poll.
+
+Today only, and no further back. Yesterday's takings are a reporting question for
+the admin console, on a screen with a keyboard; bounding the tablet's view at one
+shop-local day means no pagination, no date picker, and one request.
 
 Each order card is a prep instruction, not a receipt — the same principle as the
 web console's make ticket, and the same layout so staff moving between the two
@@ -100,7 +112,16 @@ are not relearning:
 
 Drinks first and bigger, because that is what this app is for. Size and add-ons
 are on the same line as the drink, since a 700 ml with cheese cream and a 500 ml
-without are different work.
+without are different work. The size arrives as its own field on the feed
+(`drinks[].size`) rather than being read out of the name — it lived in the name
+until `strip-size-from-names` moved it into its own column for the website's size
+toggle, and the ticket silently lost it.
+
+The line total and the order total are on the card too, added after the fact. This
+plan called the card "a prep instruction, not a receipt" and that is still the
+layout — money sits at the bottom, under the prep — but payment happens at this
+counter, at handover, so the number staff actually collect has to be on the screen
+they are holding.
 
 Exclusions keep the red warning treatment they have on the web ticket. That is
 where allergies live and a miss has real consequences.

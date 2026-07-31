@@ -95,6 +95,22 @@ class TerminalApi {
     return OrderFeed.fromJson(_decode(res.body));
   }
 
+  /// Today's orders, including the ones still on the board.
+  ///
+  /// Fetched on demand rather than polled: it is a screen someone opens, not an
+  /// alarm, and adding it to the ten-second loop would triple the query load for
+  /// a list nobody is looking at.
+  Future<OrderHistory> fetchHistory() async {
+    final res = await _client
+        .get(_uri('/api/terminal/orders/history'), headers: _headers)
+        .timeout(_timeout);
+    if (res.statusCode == 401) throw const TerminalUnauthorized();
+    if (res.statusCode != 200) {
+      throw http.ClientException('history ${res.statusCode}');
+    }
+    return OrderHistory.fromJson(_decode(res.body));
+  }
+
   /// Acknowledge — the alarm's only exit. Moves PENDING to CONFIRMED server-side.
   Future<void> acknowledge(int orderId) async {
     final res = await _client

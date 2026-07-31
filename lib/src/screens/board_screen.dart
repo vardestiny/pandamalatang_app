@@ -10,6 +10,7 @@ import '../theme.dart';
 import '../widgets/order_card.dart';
 import '../widgets/panda_logo.dart';
 import 'alert_overlay.dart';
+import 'history_screen.dart';
 import 'profile_screen.dart';
 
 /// The screen the tablet sits on all day.
@@ -170,6 +171,14 @@ class _BoardScreenState extends State<BoardScreen> {
           ],
         ),
         actions: [
+          // Before the settings cog: it is reached during service, the cog is not.
+          IconButton(
+            tooltip: l.historyTooltip,
+            icon: const Icon(Icons.receipt_long),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => HistoryScreen(poller: poller)),
+            ),
+          ),
           IconButton(
             tooltip: l.profileTooltip,
             icon: const Icon(Icons.settings),

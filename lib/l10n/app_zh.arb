@@ -109,5 +109,15 @@
   "unpair": "解除绑定",
   "unpairTitle": "解除终端绑定？",
   "unpairBody": "解除后设备将不再接收订单。重新绑定需要在后台生成新的配对码。",
-  "cancel": "取消"
+  "cancel": "取消",
+
+  "historyTitle": "今天",
+  "historyTooltip": "今天的订单",
+  "historyEmpty": "今天还没有订单。",
+  "historyFailed": "无法加载订单。",
+  "historyRetry": "重试",
+  "historySummary": "{count, plural, other{{count} 个订单}}",
+  "historyCancelled": "{count, plural, other{已取消 {count} 个}}",
+  "historyTakings": "今日营业额",
+  "historyTruncated": "仅显示最近 200 个订单。"
 }

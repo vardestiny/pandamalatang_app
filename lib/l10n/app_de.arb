@@ -139,5 +139,18 @@
   "unpair": "Entkoppeln",
   "unpairTitle": "Terminal entkoppeln?",
   "unpairBody": "Das Gerät empfängt danach keine Bestellungen mehr. Für die erneute Kopplung wird ein neuer Code aus dem Admin gebraucht.",
-  "cancel": "Abbrechen"
+  "cancel": "Abbrechen",
+
+  "historyTitle": "Heute",
+  "@historyTitle": {"description": "Order history screen. Today only — yesterday is a question for the admin console, on a screen with a keyboard."},
+  "historyTooltip": "Bestellungen von heute",
+  "historyEmpty": "Heute noch keine Bestellungen.",
+  "historyFailed": "Bestellungen konnten nicht geladen werden.",
+  "historyRetry": "Erneut versuchen",
+  "historySummary": "{count, plural, =1{1 Bestellung} other{{count} Bestellungen}}",
+  "@historySummary": {"placeholders": {"count": {"type": "int"}}},
+  "historyCancelled": "{count, plural, =1{1 storniert} other{{count} storniert}}",
+  "@historyCancelled": {"placeholders": {"count": {"type": "int"}}},
+  "historyTakings": "Umsatz heute",
+  "historyTruncated": "Nur die letzten 200 Bestellungen werden angezeigt."
 }

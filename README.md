@@ -143,7 +143,14 @@ method you want (`app-store-connect` for TestFlight, `ad-hoc` for direct
 install on pre-registered devices).
 
 Bump `version:` in `pubspec.yaml` for each upload — App Store Connect rejects a
-build number it has already seen.
+build number it has already seen. It currently reads `1.0.0+1`, and that build
+number is still 1 because nothing has been built for a device yet: the first
+upload can use it as it stands, every one after needs `+2`, `+3`, and so on.
+
+`pubspec.yaml` is the only place a version lives. Android picks it up through
+`flutter.versionName` / `flutter.versionCode` in `app/build.gradle.kts`, iOS
+through `$(FLUTTER_BUILD_NAME)` / `$(FLUTTER_BUILD_NUMBER)` in `Info.plist` —
+so there is nothing to keep in sync by hand.
 
 ### iOS settings already in place
 

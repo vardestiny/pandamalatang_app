@@ -1,7 +1,16 @@
 name: pandamalatang_terminal
 description: "Panda Malatang terminal — receives orders and makes sure nobody misses one."
 publish_to: 'none'
-version: 0.1.0+1
+# 1.0.0 — the first release build. Single source of truth for both platforms:
+# Android reads it via flutter.versionName / flutter.versionCode in
+# app/build.gradle.kts, iOS via $(FLUTTER_BUILD_NAME) / $(FLUTTER_BUILD_NUMBER)
+# in Info.plist. Nothing else in the repo carries a version number.
+#
+# The `+1` is the build number, and it has to go up for every upload — App Store
+# Connect and Play both refuse one they have already seen. It is still 1 because
+# nothing has been built for a device yet: no APK, AAB or IPA exists and there
+# are no release tags.
+version: 1.0.0+1
 
 environment:
   sdk: ^3.12.2

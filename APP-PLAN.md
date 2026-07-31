@@ -44,6 +44,46 @@ says it has.
 Push can be added later without changing the order model; it becomes a second
 trigger for the same fetch.
 
+### The hole this leaves: the app in the background
+
+Requested 2026-08-01, and only half-closeable from Dart.
+
+Backgrounded, the ten-second timer is at the OS's mercy. Android throttles it,
+then dozes it, then may kill the process; iOS suspends the isolate within seconds.
+So while the app is not in front, **no poll runs and nothing makes a noise** —
+which is the failure this app was built to prevent, arrived at from a direction the
+plan above did not consider. Nothing was ever posted to the notification shade
+either, so even a poll that did land in a live background process had no way to
+say so.
+
+What is done: `OrderPoller` observes the app lifecycle and polls on `resumed`, so
+returning to the app catches up instantly instead of showing a board up to ten
+seconds stale. That fixes coming back. It does not tell anyone while they are away.
+
+What telling them actually needs, and why it is not written yet — none of it can be
+compiled on the current machine, which has **no Android SDK and no Xcode** (see
+README): `flutter analyze`, `flutter test` and `flutter build web` all pass without
+touching a line of it.
+
+**Android — foreground service + local notification.** The right shape for this
+product: a foreground service keeps the isolate and the poll alive indefinitely,
+screen off included, and `flutter_local_notifications` posts a high-importance
+notification when a new order lands. The service's own persistent notification is a
+feature rather than a cost here — "the monitor is running" is exactly the thing §1
+says a terminal must state out loud. Needs `POST_NOTIFICATIONS`,
+`FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_DATA_SYNC`, a channel at alarm
+importance, and a service declaration. No server change.
+
+**iOS — push, and it is a bigger ask than it looks.** A suspended app cannot poll,
+so the only route is APNs: a Firebase project, credentials in Coolify, and a send
+on order creation from the web repo. A *looping* alarm that ignores the silent
+switch additionally needs Apple's Critical Alerts entitlement, which is an
+application to Apple, not a checkbox. Worth knowing before promising the shop that
+an iPad behaves like the Android tablet.
+
+Given the app has never been built for iOS at all, Android first is the obvious
+order of work.
+
 ## 2. Device registration
 
 A terminal is a first-class record in the backend, so the console can show which

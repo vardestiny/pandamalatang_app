@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -343,4 +344,63 @@ void main() {
     expect(poller.orders.first.drinks, isEmpty);
     expect(poller.consecutiveFailures, 0);
   });
+
+  group('coming back to the foreground', () {
+    testWidgets('polls on resume, so the board is never stale on return',
+        (tester) async {
+      // Backgrounded, the timer is at the OS's mercy — Android throttles then
+      // stops it, iOS suspends the isolate. Returning to the app is therefore the
+      // one moment the board is guaranteed to be wrong, and nothing used to
+      // refetch. Counted through the feed closure: it runs once per fetch.
+      var fetches = 0;
+      final poller = OrderPoller(
+        api: apiReturning(() {
+          fetches++;
+          return [order(1)];
+        }),
+        // Long enough that the periodic tick cannot be what satisfies the test.
+        interval: const Duration(minutes: 5),
+      );
+      poller.start();
+      await tester.pumpAndSettle();
+      expect(fetches, 1, reason: 'start() polls immediately');
+
+      // Away and back.
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pumpAndSettle();
+      expect(fetches, 1, reason: 'going away must not fetch');
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(fetches, 2);
+
+      // Inside the body, not a tearDown: the harness asserts no timer is pending
+      // when the body ends, and it checks before tearDowns run.
+      poller.stop();
+    });
+
+    testWidgets('a stopped poller does not fetch on resume', (tester) async {
+      // stop() is what unpairing and disposal call. One that kept answering
+      // lifecycle events afterwards would fetch with a revoked token.
+      var fetches = 0;
+      final poller = OrderPoller(
+        api: apiReturning(() {
+          fetches++;
+          return [order(1)];
+        }),
+        interval: const Duration(minutes: 5),
+      );
+
+      poller.start();
+      await tester.pumpAndSettle();
+      poller.stop();
+      final afterStop = fetches;
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+
+      expect(fetches, afterStop);
+    });
+  });
+
 }

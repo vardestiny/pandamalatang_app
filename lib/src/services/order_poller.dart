@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import '../api/terminal_api.dart';
 import '../models/order.dart';
 
@@ -9,7 +9,7 @@ import '../models/order.dart';
 /// everything open, and this compares it against the ids already seen. A terminal
 /// that was asleep, offline or restarting therefore catches up on its next poll
 /// instead of having silently missed the alert.
-class OrderPoller extends ChangeNotifier {
+class OrderPoller extends ChangeNotifier with WidgetsBindingObserver {
   OrderPoller({required TerminalApi api, this.interval = const Duration(seconds: 10)})
       : _api = api;
 
@@ -50,11 +50,29 @@ class OrderPoller extends ChangeNotifier {
     // should not wait ten seconds to find out there are four orders waiting.
     unawaited(poll());
     _timer = Timer.periodic(interval, (_) => poll());
+    WidgetsBinding.instance.addObserver(this);
   }
 
   void stop() {
     _timer?.cancel();
     _timer = null;
+    WidgetsBinding.instance.removeObserver(this);
+  }
+
+  /// Catch up the moment the app comes back.
+  ///
+  /// Backgrounded, this timer is at the OS's mercy: Android throttles it and then
+  /// stops it, iOS suspends the isolate within seconds. So returning to the app is
+  /// the one moment the board is guaranteed to be stale, and it was the one moment
+  /// nothing triggered a fetch — a staff member who checked something else for
+  /// thirty seconds came back to a board that stayed wrong for up to ten more.
+  ///
+  /// It is not a substitute for being told while still in the background. That
+  /// needs a notification the OS posts, which needs platform work this cannot do
+  /// from Dart alone — see APP-PLAN §1.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) unawaited(poll());
   }
 
   void updateApi(TerminalApi api) {

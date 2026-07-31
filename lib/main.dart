@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -11,6 +13,7 @@ import 'src/services/alarm.dart';
 import 'src/services/app_settings.dart';
 import 'src/services/credentials.dart';
 import 'src/services/order_poller.dart';
+import 'src/services/push.dart';
 import 'src/theme.dart';
 
 void main() {
@@ -77,6 +80,11 @@ class _Root extends StatefulWidget {
 class _RootState extends State<_Root> {
   final _credentials = Credentials();
   final _alarm = Alarm();
+  final _push = PushService();
+
+  /// Held alongside the poller only so unpairing can tell the server to stop
+  /// sending push here. The poller owns it for everything else.
+  TerminalApi? _api;
 
   OrderPoller? _poller;
   bool _loading = true;
@@ -108,7 +116,31 @@ class _RootState extends State<_Root> {
     final baseUrl = await _credentials.baseUrl();
     final api = TerminalApi(baseUrl: baseUrl, token: token);
     final poller = OrderPoller(api: api);
+    _api = api;
     if (mounted) setState(() => _poller = poller);
+    // Deliberately not awaited. Asking for a device token shows a permission
+    // dialog on first launch and can take iOS several seconds to answer; the board
+    // must not wait on either, because the poll is what actually keeps it current.
+    unawaited(_registerForPush(api));
+  }
+
+  /// Register this tablet for push, so an order arriving while the app is in the
+  /// background still makes a noise.
+  ///
+  /// Every failure here is survivable and none is worth putting on screen: the
+  /// board is already running its ten-second poll and the shop gets an email
+  /// besides. The one exception is a revoked terminal, which must unpair.
+  Future<void> _registerForPush(TerminalApi api) async {
+    if (!_push.available) return;
+    try {
+      final token = await _push.requestToken();
+      if (token == null) return;
+      await api.registerPushToken(deviceToken: token.token, sandbox: token.sandbox);
+    } on TerminalUnauthorized {
+      await _unpair();
+    } catch (e) {
+      debugPrint('push registration failed: $e');
+    }
   }
 
   /// Reported at pairing so a lost tablet can be identified in the console. Best
@@ -132,6 +164,14 @@ class _RootState extends State<_Root> {
 
   Future<void> _unpair() async {
     await _alarm.stop();
+    // Both halves, in this order: the server stops sending to this device while the
+    // credential is still valid enough to be believed, then the OS registration
+    // goes. Skipping the first would leave a handed-on tablet hearing about this
+    // shop's orders until Apple happened to reject the token — which, for a device
+    // that still has the app installed, is never.
+    await _api?.unregisterPushToken();
+    await _push.unregister();
+    _api = null;
     _poller?.dispose();
     await _credentials.clear();
     if (mounted) setState(() => _poller = null);

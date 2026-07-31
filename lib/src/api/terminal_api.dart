@@ -146,6 +146,64 @@ class TerminalApi {
     throw http.ClientException('status ${res.statusCode}');
   }
 
+  /// Tell the server where to send push for this device.
+  ///
+  /// Called on every launch rather than once. iOS reissues a device token after a
+  /// restore, a reinstall, and sometimes for reasons of its own, and the app has
+  /// no way to know which launch that happened on — so it re-registers every time
+  /// and the server upserts.
+  ///
+  /// Returns whether it landed, and never throws on a network failure: push is the
+  /// third channel after the poll and the shop's email, and failing a launch over
+  /// it would trade a working tablet for a nicer notification.
+  Future<bool> registerPushToken({
+    required String deviceToken,
+    required bool sandbox,
+  }) async {
+    try {
+      final res = await _client
+          .post(
+            _uri('/api/terminal/push-token'),
+            headers: _headers,
+            body: jsonEncode({
+              'token': deviceToken,
+              // Which of Apple's two hosts this token belongs to. The app knows
+              // and the server cannot: it is a property of the build, and a
+              // debug build's token is rejected by the production host.
+              'environment': sandbox ? 'sandbox' : 'production',
+            }),
+          )
+          .timeout(_timeout);
+      if (res.statusCode == 401) throw const TerminalUnauthorized();
+      return res.statusCode == 200;
+    } on TerminalUnauthorized {
+      // Rethrown: a revoked terminal must reach the unpair path, the same as any
+      // other 401. It is the only failure here that is not transient.
+      rethrow;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Stop sending push to this device.
+  ///
+  /// Called when unpairing. Without it a revoked tablet keeps being told about
+  /// every order until Apple happens to reject the token, which for a device that
+  /// still has the app installed is never.
+  ///
+  /// Best-effort for a different reason than the register call: unpairing must
+  /// succeed locally even with no network, or a tablet being handed on cannot be
+  /// wiped.
+  Future<void> unregisterPushToken() async {
+    try {
+      await _client
+          .delete(_uri('/api/terminal/push-token'), headers: _headers)
+          .timeout(_timeout);
+    } catch (_) {
+      // Ignored. The server-side sweep for this is a 401 on the next push.
+    }
+  }
+
   Map<String, dynamic> _decode(String body) {
     try {
       final decoded = jsonDecode(body);

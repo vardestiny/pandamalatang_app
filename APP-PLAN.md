@@ -42,7 +42,9 @@ a row fail. A terminal that has silently stopped receiving is worse than one tha
 says it has.
 
 Push can be added later without changing the order model; it becomes a second
-trigger for the same fetch.
+trigger for the same fetch. That is exactly what happened — see below. The poll
+remains the transport; push exists only to make a noise while the app is away, and
+the two are independent enough that either can fail alone.
 
 ### The hole this leaves: the app in the background
 
@@ -74,71 +76,77 @@ says a terminal must state out loud. Needs `POST_NOTIFICATIONS`,
 `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_DATA_SYNC`, a channel at alarm
 importance, and a service declaration. No server change.
 
-**iOS — push, and it is a bigger ask than it looks.** A suspended app cannot poll,
-so the only route is APNs: a Firebase project, credentials in Coolify, and a send
-on order creation from the web repo. A *looping* alarm that ignores the silent
-switch additionally needs Apple's Critical Alerts entitlement, which is an
-application to Apple, not a checkbox. Worth knowing before promising the shop that
-an iPad behaves like the Android tablet.
+**iOS — push. Built 2026-08-01, and unfinished in one specific place.** The
+suspended-app problem has no Dart answer, so the route is APNs, direct to Apple.
+What exists now:
 
-Given the app has never been built for iOS at all, Android first is the obvious
-order of work.
-
-#### If iOS push is the route: what has to exist first
-
-Asked 2026-08-01. Two ways to reach APNs, and the recommendation is the less
-fashionable one.
-
-**Direct APNs, not Firebase.** FCM is the usual Flutter path and it still needs an
-APNs key uploaded to Google, plus a Firebase project, a `GoogleService-Info.plist`
-and the Firebase SDK in the app. For one shop with two tablets and a server we
-already control, that is a second vendor for no gain — and it puts Google in the
-data path of a German business that has a Datenschutzerklärung naming its
-processors. Direct APNs is Apple only, and Apple is already in the path via the
-store. The server side is a signed JWT and one HTTP/2 POST.
-
-**From Apple — the four values the server needs.** All from
-developer.apple.com → Certificates, Identifiers & Profiles:
-
-| | where | note |
+| | where | verified |
 |---|---|---|
-| APNs Auth Key `.p8` | Keys → + → tick "Apple Push Notifications service (APNs)" | **downloads once**, never again |
-| Key ID | shown next to the key, 10 chars | also in the filename |
-| Team ID | Membership details, 10 chars | |
-| Bundle ID | already `com.pandamalatang.terminal` | needs Push Notifications ticked on the App ID |
+| Provider send | web repo `src/lib/apns.server.ts` | 26 tests, ES256 signature verified against a generated P-256 key |
+| Token store | web repo `push_tokens` table + `/api/terminal/push-token` | 10 tests |
+| Fired on order create | web repo `src/app/api/orders/route.ts`, ONLINE path only | `next build` passes |
+| Dart half | `lib/src/services/push.dart`, `TerminalApi.registerPushToken` | 16 tests |
+| Swift half | `ios/Runner/AppDelegate.swift` | **not compiled — no Xcode on this machine** |
 
-A **paid Apple Developer Program membership** is the prerequisite for all of it,
-and separately Xcode and CocoaPods have to exist on some Mac — neither is installed
-on the current one.
+**The Swift half has never been built.** It is authored against the Flutter 3.44
+public headers (`FlutterImplicitEngineBridge.applicationRegistrar.messenger()`,
+which is the current API and not the `window.rootViewController` cast most examples
+still show), but the machine has Command Line Tools only — no Xcode, no CocoaPods —
+so `flutter build ios` cannot run here. Treat that file as reviewed, not tested.
 
-**Sandbox and production are different endpoints and different tokens.** A device
-token from a debug build only works against `api.sandbox.push.apple.com`; TestFlight
-and App Store builds only work against `api.push.apple.com`. The same `.p8` signs
-for both, so this is one environment variable, but a token registered by a debug
-build will silently 400 against production. Store the environment alongside the
-token.
+**What still has to be done in Xcode, by hand, once.** None of it is code:
 
-**Loud is a separate application to Apple.** A normal push plays a sound of up to
-30 seconds and obeys silent mode and Do Not Disturb — it cannot loop, and it cannot
-be the alarm §4 specifies. `interruption-level: time-sensitive` breaks through
-Focus and needs only a capability tick. An actual looping, silent-switch-ignoring
-alarm needs **Critical Alerts**, which is a request form to Apple and can be
-refused. Worth settling before promising the shop that an iPad behaves like the
+1. Open `ios/Runner.xcworkspace` → Runner target → *Signing & Capabilities*.
+2. `+ Capability` → **Push Notifications**. This is what creates
+   `Runner.entitlements` with `aps-environment`, and no entitlements file is
+   committed on purpose — Xcode wires the build setting at the same time, and a
+   hand-written one drifts from `project.pbxproj`.
+3. `+ Capability` → **Time Sensitive Notifications**, so
+   `interruption-level: time-sensitive` is honoured rather than ignored.
+4. On developer.apple.com, the App ID `com.pandamalatang.terminal` needs Push
+   Notifications ticked, and the provisioning profile regenerated afterwards.
+5. `pod install` in `ios/`, since CocoaPods has never run for this project.
+
+No `UIBackgroundModes` entry is needed: these are alert pushes with
+`apns-push-type: alert`, not silent content-available ones.
+
+**Sandbox and production are different endpoints and different tokens** — and this
+is handled rather than documented. A token from a debug build only delivers via
+`api.sandbox.push.apple.com`, TestFlight and App Store builds only via
+`api.push.apple.com`, and Apple returns the same opaque `400 BadDeviceToken` for
+"wrong host" as for "nonsense token". So the server retries the other host and
+persists the correction, and deletes the row only when both hosts reject it. Which
+means `APNS_ENVIRONMENT` and the app's own reading of its provisioning profile are
+both self-correcting, and a wrong guess costs one failed push rather than the shop's
+notifications.
+
+**Loud is still a separate application to Apple.** A normal push plays a sound of up
+to 30 seconds and obeys silent mode and Do Not Disturb — it cannot loop, and it
+cannot be the alarm §4 specifies. `interruption-level: time-sensitive` (set in the
+payload, step 3 above) breaks through Focus and needs only the capability. An actual
+looping, silent-switch-ignoring alarm needs **Critical Alerts**, which is a request
+form to Apple and can be refused. So push supplements the in-app alarm; it does not
+replace it. Worth settling before promising the shop that an iPad behaves like the
 Android tablet, because on this point it does not.
 
-**Keep the payload free of customer data.** "Neue Bestellung #K7F2QM · Abholung
-18:30" is enough for the counter and puts nothing about a customer through Apple's
-servers. Putting the customer's name in the alert would make Apple a recipient of
-their personal data and pull a section into the website's Datenschutzerklärung for
-the sake of a nicer notification.
+**The payload carries no customer data**, asserted by a test rather than left to
+discipline: "Neue Bestellung #K7F2QM · Abholung 18:30" is everything the counter
+needs. A customer's name in the alert would make Apple a recipient of their personal
+data and pull a section into the website's Datenschutzerklärung for the sake of a
+nicer notification.
 
-**What the app and server need, sketched.** The device-token half is small because
-the pairing already built the hard part: a terminal has a bearer token, so it can
-`POST /api/terminal/push-token` and be trusted without anything new. Server keeps
-`(terminal, token, environment)`, and the order-create path signs an ES256 JWT with
-the `.p8` (`iss` = Team ID, `kid` = Key ID, refreshed at most hourly) and POSTs to
-`/3/device/<token>` with `apns-topic` = the bundle ID. Node's built-in `http2` is
-enough; no APNs library is required.
+**Registration is re-done on every launch, not once.** iOS reissues a device token
+after a restore or a reinstall and the app cannot know which launch that was, so it
+re-registers each time and the server upserts. Unpair deletes server-side *and*
+unregisters with the OS — without the first, a handed-on tablet keeps hearing about
+this shop's orders until Apple happens to reject the token, which for a device that
+still has the app installed is never.
+
+**Android is still open.** Background push there means FCM, which means the Firebase
+project and SDK this design exists to avoid; the alternative is a foreground service
+(see above) which needs no server at all and posts a local notification. That is
+still the better shape for an Android tablet, and still unbuildable here — no
+Android SDK.
 
 ## 2. Device registration
 

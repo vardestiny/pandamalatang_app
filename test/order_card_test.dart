@@ -14,7 +14,12 @@ TerminalOrder orderAt(String status) => TerminalOrder.fromJson({
       'createdAt': DateTime.now().toIso8601String(),
       'totalAmount': 4.3,
       'drinks': [
-        {'name': 'Assam Milchtee', 'quantity': 1, 'lineTotal': 4.3},
+        {
+          'name': 'Assam Milchtee',
+          'size': '700 ml',
+          'quantity': 1,
+          'lineTotal': 4.3,
+        },
       ],
       'bowls': const [],
     });
@@ -63,6 +68,35 @@ void main() {
     await pumpCard(tester, legacy);
 
     expect(find.text('#1042'), findsOneWidget);
+  });
+
+  testWidgets('the cup size is on the drink line', (tester) async {
+    // The regression this exists for: the size used to live in the drink's name,
+    // and `strip-size-from-names` moved it into its own column for the website's
+    // size toggle. The kitchen ticket had been reading it out of the name, so a
+    // 500 ml and a 700 ml Assam silently became the same line.
+    await pumpCard(tester, orderAt('CONFIRMED'));
+    expect(find.text('700 ml'), findsOneWidget);
+  });
+
+  testWidgets('a one-size drink shows no size at all', (tester) async {
+    // Most of the menu is sold in one size. A chip reading "null" or an empty box
+    // would be worse than the omission.
+    final single = TerminalOrder.fromJson({
+      'id': 7,
+      'reference': 'AAA111',
+      'status': 'CONFIRMED',
+      'createdAt': DateTime.now().toIso8601String(),
+      'totalAmount': 4.3,
+      'drinks': [
+        {'name': 'Assam Milchtee', 'quantity': 1, 'lineTotal': 4.3},
+      ],
+      'bowls': const [],
+    });
+    await pumpCard(tester, single);
+
+    expect(find.text('Assam Milchtee'), findsOneWidget);
+    expect(find.textContaining('ml'), findsNothing);
   });
 
   testWidgets('the button names the step, in the console\'s words', (tester) async {

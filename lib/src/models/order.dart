@@ -116,6 +116,7 @@ class TerminalOrder {
 class OrderDrink {
   const OrderDrink({
     required this.name,
+    required this.size,
     required this.quantity,
     required this.options,
     required this.lineTotal,
@@ -124,6 +125,14 @@ class OrderDrink {
   });
 
   final String name;
+
+  /// Which cup — "500 ml", "700 ml". Null for a drink sold in one size only.
+  ///
+  /// Not translated, and it must not be: the volume is the same string in every
+  /// language. It arrives from the menu row's `variantLabel` rather than being
+  /// read out of the name, which is where the kitchen used to find it.
+  final String? size;
+
   final int quantity;
 
   /// Paid add-ons. Part of the prep instruction, not a price footnote: a tea
@@ -140,6 +149,7 @@ class OrderDrink {
 
   factory OrderDrink.fromJson(Map<String, dynamic> j) => OrderDrink(
         name: j['name'] as String? ?? '?',
+        size: j['size'] as String?,
         quantity: j['quantity'] as int? ?? 1,
         options: (j['options'] as List<dynamic>? ?? const [])
             .map((e) => e.toString())

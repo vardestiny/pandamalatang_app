@@ -6,9 +6,9 @@ import '../l10n_ext.dart';
 import '../models/order.dart';
 import '../theme.dart';
 
-/// One order on the board, laid out as a prep instruction rather than a receipt —
-/// the same ordering as the web console's make ticket, so staff moving between
-/// the two are not relearning where to look.
+/// One order on the board, laid out prep-first — the same ordering as the web
+/// console's make ticket, so staff moving between the two are not relearning
+/// where to look.
 class OrderCardView extends StatefulWidget {
   const OrderCardView({super.key, required this.order, this.onAdvance});
   final TerminalOrder order;
@@ -248,9 +248,40 @@ class _DrinkLine extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  drink.name,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                // Name and size on one line, and the size gets a chip rather
+                // than being appended to the name: the cup is picked up before
+                // the name is finished being read, and "Assam Milchtee 700 ml"
+                // wraps on a tablet in a way that can hide the size on line two.
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        drink.name,
+                        style: const TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    if (drink.size != null) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: PandaColors.ink,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          drink.size!,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 // Above the paid add-ons: this is the drink itself, and getting
                 // it wrong means pouring the cup again.

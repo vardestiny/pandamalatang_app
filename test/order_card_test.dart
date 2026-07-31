@@ -99,6 +99,16 @@ void main() {
     expect(find.textContaining('ml'), findsNothing);
   });
 
+  testWidgets('the money is on the card — line and order total', (tester) async {
+    // Payment happens at handover, at this tablet. Neither number was on screen.
+    await pumpCard(tester, orderAt('READY'));
+
+    expect(find.text('Gesamt'), findsOneWidget);
+    // 4,30 € twice over: the one drink line and the order total, which happen to
+    // match on a single-line order.
+    expect(find.textContaining('4,30'), findsNWidgets(2));
+  });
+
   testWidgets('the button names the step, in the console\'s words', (tester) async {
     for (final (status, label) in const [
       ('PENDING', 'Annehmen'),

@@ -98,6 +98,10 @@
     "placeholders": { "amount": { "type": "String", "example": "15,00 €" }, "grams": { "type": "int" } }
   },
 
+  "orderTotal": "Gesamt",
+  "@orderTotal": {"description": "Label on the amount the counter collects at handover. Payment happens in the shop, so this is the one number staff read off the card."},
+  "payAtPickup": "Zahlung bei Abholung",
+
   "alertHeadline": "{count, plural, =1{NEUE BESTELLUNG} other{{count} NEUE BESTELLUNGEN}}",
   "@alertHeadline": { "placeholders": { "count": { "type": "int" } } },
   "alertAccept": "{count, plural, =1{ANNEHMEN} other{ALLE ANNEHMEN}}",

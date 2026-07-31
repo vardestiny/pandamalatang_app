@@ -8,7 +8,8 @@ import '../theme.dart';
 
 /// One order on the board, laid out prep-first — the same ordering as the web
 /// console's make ticket, so staff moving between the two are not relearning
-/// where to look.
+/// where to look. Money sits at the bottom, out of the way of the prep but on
+/// screen, because payment happens at handover.
 class OrderCardView extends StatefulWidget {
   const OrderCardView({super.key, required this.order, this.onAdvance});
   final TerminalOrder order;
@@ -151,6 +152,40 @@ class _OrderCardViewState extends State<OrderCardView> {
               ),
             ),
           ],
+
+          // The total, immediately above the one button that means "handed over".
+          // Payment happens in the shop, so this is the number a staff member
+          // actually needs off this card, and it was nowhere on it.
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: PandaColors.creamDeep,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                Text(
+                  l.orderTotal,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  l.payAtPickup,
+                  style: const TextStyle(fontSize: 12, color: PandaColors.inkSoft),
+                ),
+                const Spacer(),
+                Text(
+                  l.money(order.totalAmount),
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    fontFeatures: [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ],
+            ),
+          ),
 
           if (widget.onAdvance != null && order.nextStatus != null)
             _StepButton(
@@ -304,6 +339,22 @@ class _DrinkLine extends StatelessWidget {
                     ),
                   ),
               ],
+            ),
+          ),
+          // The line's own money, quiet and right-aligned. It is not prep
+          // information, so it must not compete with the name — but "how much is
+          // just the tea?" is asked at the counter, and the answer was not on
+          // screen anywhere.
+          Padding(
+            padding: const EdgeInsets.only(left: 8, top: 2),
+            child: Text(
+              L.of(context).money(drink.lineTotal),
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: PandaColors.inkSoft,
+                fontFeatures: [FontFeature.tabularFigures()],
+              ),
             ),
           ),
         ],

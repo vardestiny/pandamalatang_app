@@ -77,6 +77,9 @@
   "bowlTarget": "{amount} → approx. {grams} g",
   "@bowlTarget": { "placeholders": { "amount": { "type": "String", "example": "€15.00" }, "grams": { "type": "int" } } },
 
+  "orderTotal": "Total",
+  "payAtPickup": "Pay on collection",
+
   "alertHeadline": "{count, plural, =1{NEW ORDER} other{{count} NEW ORDERS}}",
   "@alertHeadline": { "placeholders": { "count": { "type": "int" } } },
   "alertAccept": "{count, plural, =1{ACCEPT} other{ACCEPT ALL}}",

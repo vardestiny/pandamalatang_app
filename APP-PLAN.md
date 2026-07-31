@@ -88,24 +88,42 @@ What exists now:
 | Dart half | `lib/src/services/push.dart`, `TerminalApi.registerPushToken` | 16 tests |
 | Swift half | `ios/Runner/AppDelegate.swift` | **not compiled — no Xcode on this machine** |
 
-**The Swift half has never been built.** It is authored against the Flutter 3.44
-public headers (`FlutterImplicitEngineBridge.applicationRegistrar.messenger()`,
-which is the current API and not the `window.rootViewController` cast most examples
-still show), but the machine has Command Line Tools only — no Xcode, no CocoaPods —
-so `flutter build ios` cannot run here. Treat that file as reviewed, not tested.
+**The Swift half is not compiled on this machine** — Command Line Tools only, no
+Xcode and no CocoaPods, so `flutter build ios` cannot run here and only
+`swiftc -parse` (syntax) can. It is authored against the Flutter 3.44 public headers
+(`FlutterImplicitEngineBridge.applicationRegistrar.messenger()`, the current API,
+not the `window.rootViewController` cast most examples still show).
 
-**What still has to be done in Xcode, by hand, once.** None of it is code:
+Two things the first real Xcode build caught, on 2026-08-01, both worth keeping
+written down:
 
-1. Open `ios/Runner.xcworkspace` → Runner target → *Signing & Capabilities*.
-2. `+ Capability` → **Push Notifications**. This is what creates
-   `Runner.entitlements` with `aps-environment`, and no entitlements file is
-   committed on purpose — Xcode wires the build setting at the same time, and a
-   hand-written one drifts from `project.pbxproj`.
-3. `+ Capability` → **Time Sensitive Notifications**, so
-   `interruption-level: time-sensitive` is honoured rather than ignored.
-4. On developer.apple.com, the App ID `com.pandamalatang.terminal` needs Push
-   Notifications ticked, and the provisioning profile regenerated afterwards.
-5. `pod install` in `ios/`, since CocoaPods has never run for this project.
+- **All three delegate callbacks need `override`.** They are absent from
+  `FlutterAppDelegate.h`, so reading the headers suggests they are not inherited —
+  but the compiler sees them through the Objective-C interface, and Swift then
+  demands the keyword. Which also means `willPresent` cannot live in an extension
+  (Swift cannot override from one) and that `super` is available for the two
+  `didRegister…` callbacks, so Flutter's forwarding to plugins is preserved.
+  `willPresent` still must not call `super` — Flutter's own implementation invokes
+  the completion handler, and invoking one twice is a crash.
+- **`.banner` and `.list` are iOS 14.** The deployment target is 13.0, so the
+  foreground presentation options need an `#available` branch with `.alert` for 13.
+
+**The Xcode capabilities are done** (`39fc9d1`, added from a machine with Xcode):
+`ios/Runner/Runner.entitlements` now holds `aps-environment` and
+`com.apple.developer.usernotifications.time-sensitive`, and `CODE_SIGN_ENTITLEMENTS`
+is wired into all three build configurations. The entitlements file was created by
+Xcode's capability checkbox rather than by hand, which is the right way round — the
+checkbox writes the file and the build setting in one move, and a hand-written file
+drifts from `project.pbxproj`.
+
+`aps-environment` is checked in as `development`. That is correct and not a thing to
+fix: Xcode substitutes the value from the provisioning profile when archiving for
+distribution, and the app reads the profile at runtime to report its own
+environment anyway.
+
+Still outside the repo, once: the App ID `com.pandamalatang.terminal` on
+developer.apple.com needs Push Notifications ticked with the profile regenerated
+afterwards, and the five `APNS_*` variables need to exist in Coolify.
 
 No `UIBackgroundModes` entry is needed: these are alert pushes with
 `apns-push-type: alert`, not silent content-available ones.

@@ -21,13 +21,14 @@ import UserNotifications
 /// twice is a hard crash; one never invoked hangs the Dart `await`, which in this
 /// app means a tablet stuck on its loading spinner.
 ///
-/// Note on `override`: the two `didRegister…`/`didFailToRegister…` methods and
-/// `willPresent` are optional protocol methods that `FlutterAppDelegate` implements
-/// in its `.mm` but does not declare in its public header, so Swift cannot see or
-/// call them on `super`. Implementing them here therefore replaces Flutter's
-/// forwarding of *those three callbacks* to plugins. Nothing in this app's plugin
-/// list wants them (device_info_plus, audioplayers, shared_preferences, http), but
-/// a future push-related plugin would need this revisited.
+/// Note on `override`: `FlutterAppDelegate` implements all three delegate callbacks
+/// below, so each needs the keyword even though none of them appears in the public
+/// header — the compiler sees them through the Objective-C interface. The two
+/// `didRegister…` ones call `super`, which is how Flutter forwards them to plugins
+/// that also want the device token. `willPresent` deliberately does not: Flutter's
+/// implementation invokes the completion handler itself, and a completion handler
+/// invoked twice is a crash. It also has to live in the class body rather than in an
+/// extension, because Swift cannot override from one.
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   /// Must match `PushService.channelName` in Dart. A mismatch is a
@@ -128,7 +129,7 @@ import UserNotifications
     }
   }
 
-  func application(
+  override func application(
     _ application: UIApplication,
     didRegisterForRemoteNotificationsWithDeviceToken token: Data
   ) {
@@ -137,12 +138,17 @@ import UserNotifications
     let hex = token.map { String(format: "%02x", $0) }.joined()
     deviceToken = hex
 
-    guard let pending = pendingResult else { return }
-    pendingResult = nil
-    pending(["token": hex, "sandbox": AppDelegate.isSandbox])
+    if let pending = pendingResult {
+      pendingResult = nil
+      pending(["token": hex, "sandbox": AppDelegate.isSandbox])
+    }
+
+    // Still forwarded: this is how Flutter passes the token to any plugin that also
+    // registered for it, and swallowing it would quietly break one added later.
+    super.application(application, didRegisterForRemoteNotificationsWithDeviceToken: token)
   }
 
-  func application(
+  override func application(
     _ application: UIApplication,
     didFailToRegisterForRemoteNotificationsWithError error: Error
   ) {
@@ -150,9 +156,36 @@ import UserNotifications
     // capability on the target, and no network at first launch.
     NSLog("push: registration failed: \(error.localizedDescription)")
 
-    guard let pending = pendingResult else { return }
-    pendingResult = nil
-    pending([:])
+    if let pending = pendingResult {
+      pendingResult = nil
+      pending([:])
+    }
+
+    super.application(application, didFailToRegisterForRemoteNotificationsWithError: error)
+  }
+
+  // MARK: - Foreground presentation
+
+  override func userNotificationCenter(
+    _ center: UNUserNotificationCenter,
+    willPresent notification: UNNotification,
+    withCompletionHandler completionHandler:
+      @escaping (UNNotificationPresentationOptions) -> Void
+  ) {
+    // Shown and sounded even in the foreground: the counter may be on the history
+    // screen, or scrolled away from the new order on the board. iOS suppresses the
+    // banner by default while an app is in front, which is exactly the moment this
+    // app is being watched.
+    //
+    // No `super` call. Flutter's implementation invokes the completion handler
+    // itself, and invoking one twice is a hard crash.
+    if #available(iOS 14.0, *) {
+      completionHandler([.banner, .sound, .list])
+    } else {
+      // `.alert` is what iOS 13 has; iOS 14 split it into `.banner` and `.list`.
+      // The deployment target is still 13.0, so both branches have to exist.
+      completionHandler([.alert, .sound])
+    }
   }
 
   // MARK: - Environment
@@ -188,19 +221,4 @@ import UserNotifications
       return text[key.upperBound...].prefix(120).contains("<string>development</string>")
     #endif
   }()
-}
-
-// MARK: - Foreground presentation
-
-extension AppDelegate {
-  func userNotificationCenter(
-    _ center: UNUserNotificationCenter,
-    willPresent notification: UNNotification,
-    withCompletionHandler completionHandler:
-      @escaping (UNNotificationPresentationOptions) -> Void
-  ) {
-    // Banner and sound even in the foreground: the counter may be on the history
-    // screen, or scrolled away from the new order on the board.
-    completionHandler([.banner, .sound, .list])
-  }
 }

@@ -84,6 +84,62 @@ an iPad behaves like the Android tablet.
 Given the app has never been built for iOS at all, Android first is the obvious
 order of work.
 
+#### If iOS push is the route: what has to exist first
+
+Asked 2026-08-01. Two ways to reach APNs, and the recommendation is the less
+fashionable one.
+
+**Direct APNs, not Firebase.** FCM is the usual Flutter path and it still needs an
+APNs key uploaded to Google, plus a Firebase project, a `GoogleService-Info.plist`
+and the Firebase SDK in the app. For one shop with two tablets and a server we
+already control, that is a second vendor for no gain — and it puts Google in the
+data path of a German business that has a Datenschutzerklärung naming its
+processors. Direct APNs is Apple only, and Apple is already in the path via the
+store. The server side is a signed JWT and one HTTP/2 POST.
+
+**From Apple — the four values the server needs.** All from
+developer.apple.com → Certificates, Identifiers & Profiles:
+
+| | where | note |
+|---|---|---|
+| APNs Auth Key `.p8` | Keys → + → tick "Apple Push Notifications service (APNs)" | **downloads once**, never again |
+| Key ID | shown next to the key, 10 chars | also in the filename |
+| Team ID | Membership details, 10 chars | |
+| Bundle ID | already `com.pandamalatang.terminal` | needs Push Notifications ticked on the App ID |
+
+A **paid Apple Developer Program membership** is the prerequisite for all of it,
+and separately Xcode and CocoaPods have to exist on some Mac — neither is installed
+on the current one.
+
+**Sandbox and production are different endpoints and different tokens.** A device
+token from a debug build only works against `api.sandbox.push.apple.com`; TestFlight
+and App Store builds only work against `api.push.apple.com`. The same `.p8` signs
+for both, so this is one environment variable, but a token registered by a debug
+build will silently 400 against production. Store the environment alongside the
+token.
+
+**Loud is a separate application to Apple.** A normal push plays a sound of up to
+30 seconds and obeys silent mode and Do Not Disturb — it cannot loop, and it cannot
+be the alarm §4 specifies. `interruption-level: time-sensitive` breaks through
+Focus and needs only a capability tick. An actual looping, silent-switch-ignoring
+alarm needs **Critical Alerts**, which is a request form to Apple and can be
+refused. Worth settling before promising the shop that an iPad behaves like the
+Android tablet, because on this point it does not.
+
+**Keep the payload free of customer data.** "Neue Bestellung #K7F2QM · Abholung
+18:30" is enough for the counter and puts nothing about a customer through Apple's
+servers. Putting the customer's name in the alert would make Apple a recipient of
+their personal data and pull a section into the website's Datenschutzerklärung for
+the sake of a nicer notification.
+
+**What the app and server need, sketched.** The device-token half is small because
+the pairing already built the hard part: a terminal has a bearer token, so it can
+`POST /api/terminal/push-token` and be trusted without anything new. Server keeps
+`(terminal, token, environment)`, and the order-create path signs an ES256 JWT with
+the `.p8` (`iss` = Team ID, `kid` = Key ID, refreshed at most hourly) and POSTs to
+`/3/device/<token>` with `apns-topic` = the bundle ID. Node's built-in `http2` is
+enough; no APNs library is required.
+
 ## 2. Device registration
 
 A terminal is a first-class record in the backend, so the console can show which

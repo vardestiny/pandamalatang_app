@@ -133,10 +133,15 @@ is handled rather than documented. A token from a debug build only delivers via
 `api.sandbox.push.apple.com`, TestFlight and App Store builds only via
 `api.push.apple.com`, and Apple returns the same opaque `400 BadDeviceToken` for
 "wrong host" as for "nonsense token". So the server retries the other host and
-persists the correction, and deletes the row only when both hosts reject it. Which
-means `APNS_ENVIRONMENT` and the app's own reading of its provisioning profile are
-both self-correcting, and a wrong guess costs one failed push rather than the shop's
-notifications.
+persists the correction, and deletes the row only when both hosts reject it. The
+app's own reading of its provisioning profile is therefore self-correcting: a wrong
+guess costs one failed push rather than the shop's notifications.
+
+There is deliberately **no server-side environment setting**. There was an
+`APNS_ENVIRONMENT` variable briefly; it was parsed and then read by nothing, because
+the environment belongs to the device token and not to the deployment — the app
+knows which profile signed it and says so on registration, and two tablets can
+legitimately differ. Removed 2026-08-01 rather than left looking meaningful.
 
 **Loud is still a separate application to Apple.** A normal push plays a sound of up
 to 30 seconds and obeys silent mode and Do Not Disturb — it cannot loop, and it

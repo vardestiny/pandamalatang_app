@@ -11,6 +11,9 @@ abstract class PandaColors {
   static const creamDeep = Color(0xFFF4E7D4);
   static const paper = Color(0xFFFFFFFF);
   static const line = Color(0xFFE5D9C7);
+  /// Placeholder text. Between `inkSoft` and the paper, at ~3.9:1 on cream —
+  /// light enough to read as "not typed yet", dark enough to still be legible.
+  static const inkFaint = Color(0xFF857A6F);
   static const sichuan = Color(0xFF2F7D5B);
   static const amber = Color(0xFFE9A319);
 }
@@ -53,6 +56,21 @@ ThemeData pandaTheme() {
       foregroundColor: PandaColors.ink,
       elevation: 0,
       surfaceTintColor: Colors.transparent,
+    ),
+    // Without this a hint is drawn in `colorScheme.onSurfaceVariant`, merged over
+    // the field's own style — so the pairing screen's 36pt bold code field
+    // rendered "ABC123" in near-black at full weight, indistinguishable from a
+    // code someone had actually typed. A placeholder has to look like a
+    // placeholder, and that is a property of the theme rather than of one screen.
+    //
+    // Colour and weight only: the merge order is bodyLarge → the field's `style`
+    // → this, so naming a `fontSize` here would silently shrink the big code
+    // field's hint to body size.
+    inputDecorationTheme: const InputDecorationTheme(
+      hintStyle: TextStyle(
+        color: PandaColors.inkFaint,
+        fontWeight: FontWeight.w400,
+      ),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
